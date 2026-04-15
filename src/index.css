@@ -1,0 +1,227 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply font-poppins text-gray-800;
+    background: linear-gradient(135deg, rgba(255, 182, 193, 0.15) 0%, rgba(255, 255, 255, 0.4) 50%, rgba(221, 160, 221, 0.15) 100%);
+  }
+}
+
+@layer components {
+  .container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+  
+  .btn-primary {
+    @apply bg-primary text-white px-6 py-3 rounded-full font-semibold hover:bg-opacity-90 transition-all transform hover:scale-105;
+  }
+  
+  .btn-secondary {
+    @apply bg-secondary text-white px-6 py-3 rounded-full font-semibold hover:bg-opacity-90 transition-all transform hover:scale-105;
+  }
+  
+  .btn-outline {
+    @apply border-2 border-primary text-primary px-6 py-3 rounded-full font-semibold hover:bg-primary hover:text-white transition-all;
+  }
+}
+
+/* Bubble Animations */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px);
+  }
+  25% {
+    transform: translateY(-15px) translateX(8px);
+  }
+  50% {
+    transform: translateY(-30px) translateX(-8px);
+  }
+  75% {
+    transform: translateY(-15px) translateX(8px);
+  }
+}
+
+@keyframes float-slow {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px);
+  }
+  25% {
+    transform: translateY(-10px) translateX(5px);
+  }
+  50% {
+    transform: translateY(-20px) translateX(-5px);
+  }
+  75% {
+    transform: translateY(-10px) translateX(5px);
+  }
+}
+
+@keyframes twinkle {
+  0%, 100% {
+    opacity: 0.2;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.3);
+  }
+}
+
+@keyframes twinkle-fast {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.2);
+  }
+}
+
+@keyframes pulse-slow {
+  0%, 100% {
+    opacity: 0.2;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.5);
+  }
+}
+
+/* Animation Classes */
+.animate-float {
+  animation: float 8s ease-in-out infinite;
+}
+
+.animate-float-delay-1 {
+  animation: float 10s ease-in-out infinite 1s;
+}
+
+.animate-float-delay-2 {
+  animation: float 12s ease-in-out infinite 2s;
+}
+
+.animate-float-delay-3 {
+  animation: float 9s ease-in-out infinite 3s;
+}
+
+.animate-float-delay-4 {
+  animation: float 11s ease-in-out infinite 4s;
+}
+
+.animate-float-delay-5 {
+  animation: float 13s ease-in-out infinite 5s;
+}
+
+.animate-float-delay-6 {
+  animation: float 8s ease-in-out infinite 6s;
+}
+
+.animate-float-delay-7 {
+  animation: float 10s ease-in-out infinite 7s;
+}
+
+.animate-float-slow {
+  animation: float-slow 6s ease-in-out infinite;
+}
+
+.animate-twinkle {
+  animation: twinkle 4s ease-in-out infinite;
+}
+
+.animate-twinkle-delay-1 {
+  animation: twinkle 5s ease-in-out infinite 0.5s;
+}
+
+.animate-twinkle-delay-2 {
+  animation: twinkle 6s ease-in-out infinite 1s;
+}
+
+.animate-twinkle-delay-3 {
+  animation: twinkle 4.5s ease-in-out infinite 1.5s;
+}
+
+.animate-twinkle-delay-4 {
+  animation: twinkle 5.5s ease-in-out infinite 2s;
+}
+
+.animate-twinkle-delay-5 {
+  animation: twinkle 7s ease-in-out infinite 2.5s;
+}
+
+.animate-twinkle-delay-6 {
+  animation: twinkle 4s ease-in-out infinite 3s;
+}
+
+.animate-twinkle-delay-7 {
+  animation: twinkle 6s ease-in-out infinite 3.5s;
+}
+
+.animate-twinkle-delay-8 {
+  animation: twinkle 5s ease-in-out infinite 4s;
+}
+
+.animate-twinkle-delay-9 {
+  animation: twinkle 4.5s ease-in-out infinite 4.5s;
+}
+
+.animate-twinkle-fast {
+  animation: twinkle-fast 3s ease-in-out infinite;
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 6s ease-in-out infinite;
+}
+
+.animate-pulse-slow-delay {
+  animation: pulse-slow 8s ease-in-out infinite 2s;
+}
+
+/* Gentle bounce for product cards */
+@keyframes gentleBounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+.animate-gentle-bounce {
+  animation: gentleBounce 2s ease-in-out infinite;
+}
+
+/* Smooth scroll behavior */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #FF69B4;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #e55a9e;
+}
+
+/* Gradient text utility */
+.text-gradient {
+  background: linear-gradient(135deg, #FF69B4 0%, #9B59B6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}

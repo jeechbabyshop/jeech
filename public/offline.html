@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Offline - Jeech Baby Shop</title>
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      background: linear-gradient(135deg, #fce4ec 0%, #f3e5f5 100%);
+    }
+    .container {
+      text-align: center;
+      padding: 2rem;
+    }
+    img {
+      width: 120px;
+      margin-bottom: 1rem;
+    }
+    h1 {
+      color: #FF69B4;
+      margin-bottom: 0.5rem;
+    }
+    p {
+      color: #666;
+      margin-bottom: 1.5rem;
+    }
+    button {
+      background: #FF69B4;
+      color: white;
+      border: none;
+      padding: 10px 24px;
+      border-radius: 30px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #e55a9e;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <img src="/logo.png" alt="Jeech Baby Shop">
+    <h1>You're Offline</h1>
+    <p>Please check your internet connection</p>
+    <button onclick="location.reload()">Try Again</button>
+  </div>
+</body>
+</html>
