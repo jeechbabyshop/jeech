@@ -157,7 +157,7 @@ const Home = () => {
       <motion.div
         animate={{ opacity: [0.4, 1, 0.4] }}
         transition={{ duration: 1, repeat: Infinity }}
-        className="text-xs text-pink-400 font-medium"
+        className="text-xs text-[#800020] font-medium"
       >
         Loading...
       </motion.div>
@@ -165,15 +165,15 @@ const Home = () => {
   );
 
   const categories = [
-    { displayName: 'Baby Clothes', icon: '👕', bgColor: 'bg-pink-100/80 backdrop-blur-sm', categoryKey: 'clothes' },
-    { displayName: 'Baby Shoes', icon: '👟', bgColor: 'bg-blue-100/80 backdrop-blur-sm', categoryKey: 'shoes' },
-    { displayName: 'Blankets', icon: '🛌', bgColor: 'bg-purple-100/80 backdrop-blur-sm', categoryKey: 'blankets' },
-    { displayName: 'Toys', icon: '🧸', bgColor: 'bg-green-100/80 backdrop-blur-sm', categoryKey: 'toys' },
-    { displayName: 'Accessories', icon: '🎀', bgColor: 'bg-yellow-100/80 backdrop-blur-sm', categoryKey: 'accessories' },
+    { displayName: 'Baby Clothes', icon: '👕', bgColor: 'bg-white/80 backdrop-blur-sm', categoryKey: 'clothes' },
+    { displayName: 'Baby Shoes', icon: '👟', bgColor: 'bg-white/80 backdrop-blur-sm', categoryKey: 'shoes' },
+    { displayName: 'Blankets', icon: '🛌', bgColor: 'bg-white/80 backdrop-blur-sm', categoryKey: 'blankets' },
+    { displayName: 'Toys', icon: '🧸', bgColor: 'bg-white/80 backdrop-blur-sm', categoryKey: 'toys' },
+    { displayName: 'Accessories', icon: '🎀', bgColor: 'bg-white/80 backdrop-blur-sm', categoryKey: 'accessories' },
   ];
 
   const benefits = [
-    { icon: <FaBabyCarriage className="text-4xl" />, title: 'Quality Products', desc: 'Safe & tested baby essentials', color: 'text-pink-500' },
+    { icon: <FaBabyCarriage className="text-4xl" />, title: 'Quality Products', desc: 'Safe & tested baby essentials', color: 'text-[#800020]' },
     { icon: <FaWhatsapp className="text-4xl" />, title: 'Fast WhatsApp Ordering', desc: 'Order in seconds via WhatsApp', color: 'text-green-500' },
     { icon: <FaShieldAlt className="text-4xl" />, title: 'Trusted Local Shop', desc: 'Serving Murang\'a since 2020', color: 'text-blue-500' },
     { icon: <FaReply className="text-4xl" />, title: 'Fast reply', desc: 'Quick responses to your queries', color: 'text-purple-500' },
@@ -185,7 +185,7 @@ const Home = () => {
   return (
     <div>
       {/* Hero Section with Image Slider */}
-      <section className="relative bg-gradient-to-br from-pink-100/40 via-white/30 to-purple-100/40 overflow-hidden">
+      <section className="relative bg-gradient-to-br from-white via-white/30 to-gray-100/40 overflow-hidden">
         <div className="container mx-auto px-4 py-16 md:py-24 lg:py-32">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             {/* Left Content */}
@@ -195,24 +195,24 @@ const Home = () => {
               transition={{ duration: 0.6 }}
               className="text-center lg:text-left"
             >
-              <div className="inline-flex items-center gap-2 bg-pink-100/80 backdrop-blur-sm text-primary px-4 py-2 rounded-full mb-6">
+              <div className="inline-flex items-center gap-2 bg-[#800020]/10 backdrop-blur-sm text-[#800020] px-4 py-2 rounded-full mb-6">
                 <FaShoppingBag className="text-sm" />
                 <span className="text-sm font-semibold">Trusted Baby Shop in Murang'a</span>
               </div>
               <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-gray-800 mb-6 leading-tight">
-                Jeechs', Cute & Affordable
-                <span className="text-primary block mt-2">Baby Essentials</span>
+                Jeech Cute & Affordable
+                <span className="text-[#800020] block mt-2">Baby Essentials</span>
               </h1>
               <p className="text-xl text-gray-600 mb-8 leading-relaxed">
-                Welcome to Jeech baby shop we Located mukuyu murang'a along market road next to Goat market, come Discover premium quality baby products in Murang'a. Safe, comfortable, 
+                Welcome to Jeech baby shop we are located in mukuyu-murang'a along market road next to Goat market, come Discover premium quality baby products in Murang'a. Safe, comfortable, 
                 and adorable items for your little ones.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                <Link to="/shop" className="bg-primary text-white px-8 py-3 rounded-full font-semibold hover:bg-opacity-90 transition-all inline-flex items-center gap-2">
+                <Link to="/shop" className="bg-[#800020] text-white px-8 py-3 rounded-full font-semibold hover:bg-opacity-90 transition-all inline-flex items-center gap-2">
                   Shop Now 
                   <FaArrowRight />
                 </Link>
-                <a href="https://wa.me/254705797336" className="border-2 border-primary text-primary px-8 py-3 rounded-full font-semibold hover:bg-primary hover:text-white transition-all inline-flex items-center gap-2">
+                <a href="https://wa.me/254705797336" className="border-2 border-[#800020] text-[#800020] px-8 py-3 rounded-full font-semibold hover:bg-[#800020] hover:text-white transition-all inline-flex items-center gap-2">
                   <FaWhatsapp /> WhatsApp Us
                 </a>
               </div>
@@ -242,7 +242,7 @@ const Home = () => {
             >
               {sliderImages.length > 0 ? (
                 <div className="relative rounded-3xl overflow-hidden shadow-2xl bg-white/30 backdrop-blur-sm">
-                  <div className="relative aspect-square md:aspect-[4/3] overflow-hidden bg-gradient-to-br from-pink-100 to-purple-100">
+                  <div className="relative aspect-square md:aspect-[4/3] overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200">
                     {!loadedImages[currentSlide] && (
                       <div className="absolute inset-0 flex items-center justify-center">
                         <BabyLoadingFace />
@@ -291,7 +291,7 @@ const Home = () => {
                   </div>
                 </div>
               ) : (
-                <div className="relative rounded-3xl overflow-hidden shadow-2xl bg-gradient-to-r from-pink-100 to-purple-100 aspect-square flex items-center justify-center">
+                <div className="relative rounded-3xl overflow-hidden shadow-2xl bg-gradient-to-r from-gray-100 to-gray-200 aspect-square flex items-center justify-center">
                   <div className="text-center">
                     <FaShoppingBag className="text-5xl text-gray-400 mx-auto mb-3" />
                     <p className="text-gray-500">Product images will appear here</p>
@@ -301,17 +301,17 @@ const Home = () => {
               
               <div className="absolute -bottom-6 left-6 right-6 bg-white/80 backdrop-blur-md rounded-2xl p-4 shadow-xl flex items-center justify-between">
                 <div className="text-center flex-1">
-                  <p className="text-2xl font-bold text-primary">{allProducts.length}</p>
+                  <p className="text-2xl font-bold text-[#800020]">{allProducts.length}</p>
                   <p className="text-xs text-gray-500">Products</p>
                 </div>
                 <div className="w-px h-10 bg-gray-200"></div>
                 <div className="text-center flex-1">
-                  <p className="text-2xl font-bold text-primary">100%</p>
+                  <p className="text-2xl font-bold text-[#800020]">100%</p>
                   <p className="text-xs text-gray-500">Happy Parents</p>
                 </div>
                 <div className="w-px h-10 bg-gray-200"></div>
                 <div className="text-center flex-1">
-                  <p className="text-2xl font-bold text-primary">24/7</p>
+                  <p className="text-2xl font-bold text-[#800020]">24/7</p>
                   <p className="text-xs text-gray-500">Support</p>
                 </div>
               </div>
@@ -329,8 +329,8 @@ const Home = () => {
           className="text-center mb-12"
         >
           <div className="flex items-center justify-center gap-2 mb-4">
-            <FaImages className="text-3xl text-primary" />
-            <span className="text-primary font-semibold uppercase tracking-wide">From Our Gallery</span>
+            <FaImages className="text-3xl text-[#800020]" />
+            <span className="text-[#800020] font-semibold uppercase tracking-wide">From Our Gallery</span>
           </div>
           <h2 className="text-4xl md:text-5xl font-bold text-gray-800 mt-2 mb-4">Product Previews</h2>
           <p className="text-gray-600 text-lg max-w-2xl mx-auto">
@@ -368,7 +368,7 @@ const Home = () => {
                   className="relative cursor-pointer rounded-xl overflow-hidden shadow-lg group"
                   onClick={() => window.location.href = '/gallery'}
                 >
-                  <div className="aspect-square bg-gradient-to-br from-pink-100 to-purple-100 relative">
+                  <div className="aspect-square bg-gray-100 relative">
                     {!loadedGalleryImages[image.id] && (
                       <div className="absolute inset-0 flex items-center justify-center">
                         <BabyLoadingFace />
@@ -394,7 +394,7 @@ const Home = () => {
             <div className="text-center mt-8">
               <Link 
                 to="/gallery" 
-                className="inline-flex items-center gap-2 bg-primary/20 text-primary px-6 py-3 rounded-xl font-semibold hover:bg-primary hover:text-white transition-all"
+                className="inline-flex items-center gap-2 bg-[#800020]/20 text-[#800020] px-6 py-3 rounded-xl font-semibold hover:bg-[#800020] hover:text-white transition-all"
               >
                 <FaImages /> View Full Gallery ({galleryImages.length}+ images)
                 <FaArrowRight />
@@ -412,7 +412,7 @@ const Home = () => {
           transition={{ duration: 0.6 }}
           className="text-center mb-12"
         >
-          <span className="text-primary font-semibold uppercase tracking-wide">Shop Our Collection</span>
+          <span className="text-[#800020] font-semibold uppercase tracking-wide">Shop Our Collection</span>
           <h2 className="text-4xl md:text-5xl font-bold text-gray-800 mt-2 mb-4">Trending Baby Products</h2>
           <p className="text-gray-600 text-lg max-w-2xl mx-auto">
             Discover our most popular items loved by parents across Murang'a
@@ -424,7 +424,7 @@ const Home = () => {
         ) : !hasProducts ? (
           <div className="text-center py-16 bg-white/40 backdrop-blur-sm rounded-2xl">
             <p className="text-gray-500 text-lg">No products yet. Add your first product in the admin panel!</p>
-            <Link to="/admin/products" className="text-primary mt-4 inline-block font-semibold">
+            <Link to="/admin/products" className="text-[#800020] mt-4 inline-block font-semibold">
               Add Product →
             </Link>
           </div>
@@ -447,7 +447,7 @@ const Home = () => {
             <div className="text-center mt-12">
               <Link 
                 to="/shop" 
-                className="inline-flex items-center gap-2 bg-primary text-white px-8 py-4 rounded-xl font-semibold hover:bg-opacity-90 transition-all hover:scale-105 shadow-lg"
+                className="inline-flex items-center gap-2 bg-[#800020] text-white px-8 py-4 rounded-xl font-semibold hover:bg-opacity-90 transition-all hover:scale-105 shadow-lg"
               >
                 View All Products ({allProducts.length}) 
                 <FaArrowRight />
@@ -465,7 +465,7 @@ const Home = () => {
           transition={{ duration: 0.6 }}
           className="text-center mb-12"
         >
-          <span className="text-primary font-semibold uppercase tracking-wide">Categories</span>
+          <span className="text-[#800020] font-semibold uppercase tracking-wide">Categories</span>
           <h2 className="text-4xl md:text-5xl font-bold text-gray-800 mt-2 mb-4">Shop by Category</h2>
           <p className="text-gray-600 text-lg max-w-2xl mx-auto">
             Find exactly what you need for your little one
@@ -496,7 +496,7 @@ const Home = () => {
       </section>
 
       {/* Benefits Section */}
-      <section className="bg-gradient-to-r from-pink-100/30 to-purple-100/30 backdrop-blur-sm py-20">
+      <section className="bg-gray-50/30 backdrop-blur-sm py-20">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4">Why Choose Us?</h2>
@@ -526,7 +526,7 @@ const Home = () => {
       {testimonials.length > 0 && (
         <section className="container mx-auto px-4 py-20">
           <div className="text-center mb-12">
-            <span className="text-primary font-semibold uppercase tracking-wide">Testimonials</span>
+            <span className="text-[#800020] font-semibold uppercase tracking-wide">Testimonials</span>
             <h2 className="text-4xl md:text-5xl font-bold text-gray-800 mt-2">What Parents Say ❤️</h2>
             <p className="text-gray-600 mt-2">Join thousands of happy parents</p>
           </div>
@@ -547,7 +547,7 @@ const Home = () => {
                 </div>
                 <p className="text-gray-600 mb-4 leading-relaxed">"{testimonial.review}"</p>
                 <div className="flex items-center gap-3 pt-4 border-t border-white/50">
-                  <div className="w-10 h-10 bg-gradient-to-r from-pink-400 to-purple-400 rounded-full flex items-center justify-center text-white font-bold">
+                  <div className="w-10 h-10 bg-gradient-to-r from-[#800020] to-[#800020] rounded-full flex items-center justify-center text-white font-bold">
                     {testimonial.name?.charAt(0) || 'P'}
                   </div>
                   <div>

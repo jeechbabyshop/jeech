@@ -15,9 +15,9 @@ export default {
         '2xl': '1536px',
       },
       colors: {
-        primary: '#FF69B4',
-        secondary: '#9B59B6',
-        accent: '#FFB6C1',
+        primary: '#420724',     // Maroon/Dark Pink
+        secondary: '#420b58',   // Purple
+        accent: '#3a3535',      // Light Pink
       },
       fontFamily: {
         'poppins': ['Poppins', 'sans-serif'],

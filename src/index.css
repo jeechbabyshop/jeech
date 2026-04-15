@@ -15,7 +15,7 @@
   }
   
   .btn-primary {
-    @apply bg-primary text-white px-6 py-3 rounded-full font-semibold hover:bg-opacity-90 transition-all transform hover:scale-105;
+    @apply bg-primary text-white px-6 py-3 rounded-full font-semibold transition-all transform hover:scale-105;
   }
   
   .btn-secondary {
@@ -27,71 +27,55 @@
   }
 }
 
-/* Bubble Animations */
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0px) translateX(0px);
-  }
-  25% {
-    transform: translateY(-15px) translateX(8px);
-  }
-  50% {
-    transform: translateY(-30px) translateX(-8px);
-  }
-  75% {
-    transform: translateY(-15px) translateX(8px);
-  }
+/* ONLY buttons and text colors change to maroon - backgrounds stay the same */
+button.bg-pink-500, button.bg-pink-600, 
+a.bg-pink-500, a.bg-pink-600,
+.btn-pink, [role="button"].bg-pink-500 {
+  background-color: #39041e !important;
 }
 
-@keyframes float-slow {
-  0%, 100% {
-    transform: translateY(0px) translateX(0px);
-  }
-  25% {
-    transform: translateY(-10px) translateX(5px);
-  }
-  50% {
-    transform: translateY(-20px) translateX(-5px);
-  }
-  75% {
-    transform: translateY(-10px) translateX(5px);
-  }
+.text-pink-500, .text-pink-600, .text-pink-700, .text-pink-400,
+.hover\:text-pink-500:hover, .hover\:text-pink-600:hover,
+a.text-pink-500, span.text-pink-500, p.text-pink-500, div.text-pink-500 {
+  color: #3e0622 !important;
 }
 
-@keyframes twinkle {
-  0%, 100% {
-    opacity: 0.2;
-    transform: scale(0.8);
-  }
-  50% {
-    opacity: 0.7;
-    transform: scale(1.3);
-  }
+.border-pink-500, .border-pink-600,
+.btn-outline, .border-primary {
+  border-color: #58072f !important;
 }
 
-@keyframes twinkle-fast {
-  0%, 100% {
-    opacity: 0.3;
-    transform: scale(0.9);
-  }
-  50% {
-    opacity: 0.8;
-    transform: scale(1.2);
-  }
+/* Keep background gradients as they were - NOT changed to maroon */
+.from-pink-100, .from-pink-50, .from-pink-200, .from-pink-300, 
+.from-pink-400, .from-pink-500, .from-pink-600 {
+  --tw-gradient-from: #fce7f3 !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(252, 231, 243, 0)) !important;
 }
 
-@keyframes pulse-slow {
-  0%, 100% {
-    opacity: 0.2;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.5;
-    transform: scale(1.5);
-  }
+/* Keep category backgrounds as they were */
+.bg-pink-50, .bg-pink-100, .bg-pink-200 {
+  background-color: #fce7f3 !important;
 }
 
-/* Animation Classes */
+/* Scrollbar stays maroon */
+::-webkit-scrollbar-thumb {
+  background: #58072f;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3a041f;
+}
+
+/* Gradient text utility */
+.text-gradient {
+  background: linear-gradient(135deg, #3b031f 0%, #16021e 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Rest of your animations remain the same */
 .animate-float {
   animation: float 8s ease-in-out infinite;
 }
@@ -209,19 +193,66 @@ html {
   border-radius: 10px;
 }
 
-::-webkit-scrollbar-thumb {
-  background: #FF69B4;
-  border-radius: 10px;
+/* Keyframes */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px);
+  }
+  25% {
+    transform: translateY(-15px) translateX(8px);
+  }
+  50% {
+    transform: translateY(-30px) translateX(-8px);
+  }
+  75% {
+    transform: translateY(-15px) translateX(8px);
+  }
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #e55a9e;
+@keyframes float-slow {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px);
+  }
+  25% {
+    transform: translateY(-10px) translateX(5px);
+  }
+  50% {
+    transform: translateY(-20px) translateX(-5px);
+  }
+  75% {
+    transform: translateY(-10px) translateX(5px);
+  }
 }
 
-/* Gradient text utility */
-.text-gradient {
-  background: linear-gradient(135deg, #FF69B4 0%, #9B59B6 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+@keyframes twinkle {
+  0%, 100% {
+    opacity: 0.2;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.3);
+  }
+}
+
+@keyframes twinkle-fast {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.2);
+  }
+}
+
+@keyframes pulse-slow {
+  0%, 100% {
+    opacity: 0.2;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.5);
+  }
 }
