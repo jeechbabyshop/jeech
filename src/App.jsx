@@ -4,7 +4,7 @@ import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './contexts/AuthContext';
 import Navbar from './components/Layout/Navbar';
 import Footer from './components/Layout/Footer';
-import FloatingWhatsapp from "./components/Layout/FloatingWhatsapp";  
+import FloatingWhatsApp from "./components/Layout/FloatingWhatsApp";  
 import BackgroundEffects from './components/Layout/BackgroundEffects';
 import FloatingInstallButton from './components/UI/FloatingInstallButton';
 import SplashScreen from './components/UI/SplashScreen';
@@ -49,7 +49,7 @@ function App() {
             </Routes>
           </main>
           <Footer />
-          <FloatingWhatsapp />
+          <FloatingWhatsApp />
           <FloatingInstallButton />
           <Toaster position="top-right" />
         </div>
