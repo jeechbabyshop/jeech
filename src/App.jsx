@@ -2,9 +2,9 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './contexts/AuthContext';
-import Navbar from './components/layout/Navbar';
+import Navbar from './componentslayout/Navbar';
 import Footer from './components/layout/Footer';
-import FloatingWhatsApp from "./components/layout/FloatingWhatsapp";
+import FloatingWhatsapp from "./components/layout/FloatingWhatsapp";  
 import BackgroundEffects from './components/layout/BackgroundEffects';
 import FloatingInstallButton from './components/UI/FloatingInstallButton';
 import SplashScreen from './components/UI/SplashScreen';
@@ -49,7 +49,7 @@ function App() {
             </Routes>
           </main>
           <Footer />
-          <FloatingWhatsApp />
+          <FloatingWhatsapp />
           <FloatingInstallButton />
           <Toaster position="top-right" />
         </div>

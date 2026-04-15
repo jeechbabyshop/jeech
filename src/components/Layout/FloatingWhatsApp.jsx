@@ -2,7 +2,7 @@ import React from 'react';
 import { FaWhatsapp } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 
-const FloatingWhatsApp = () => {
+const FloatingWhatsapp = () => {
   const phoneNumber = import.meta.env.VITE_SHOP_PHONE_NUMBER || '254705797336';
   const whatsappUrl = `https://wa.me/${phoneNumber}?text=Hello%20Jeech%20Baby%20Shop%2C%20I%27d%20like%20to%20inquire%20about%20your%20baby%20products.`;
 
@@ -26,4 +26,4 @@ const FloatingWhatsApp = () => {
   );
 };
 
-export default FloatingWhatsApp;
+export default FloatingWhatsapp;
