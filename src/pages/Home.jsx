@@ -204,7 +204,7 @@ const Home = () => {
                 <span className="text-[#800020] block mt-2">Baby Essentials</span>
               </h1>
               <p className="text-xl text-gray-600 mb-8 leading-relaxed">
-                Welcome to Jeech baby shop we are located in mukuyu-murang'a along market road next to Goat market, come Discover premium quality baby products in Murang'a. Safe, comfortable, 
+                Welcome to Jeech baby shop we are located at mukuyu-murang'a along market road next to Goat market, come Discover premium quality baby products in Murang'a. Safe, comfortable, 
                 and adorable items for your little ones.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
