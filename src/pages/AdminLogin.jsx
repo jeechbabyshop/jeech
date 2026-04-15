@@ -1,19 +1,46 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FaEnvelope, FaLock } from 'react-icons/fa';
+import { FaEnvelope, FaLock, FaEye, FaEyeSlash } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
 
 const AdminLogin = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+
+  // Load saved credentials if "Remember Me" was checked
+  useEffect(() => {
+    const savedEmail = localStorage.getItem('adminEmail');
+    const savedPassword = localStorage.getItem('adminPassword');
+    const remember = localStorage.getItem('rememberAdmin');
+    
+    if (remember === 'true' && savedEmail) {
+      setEmail(savedEmail);
+      setPassword(savedPassword || '');
+      setRememberMe(true);
+    }
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    
+    // Handle "Remember Me" functionality
+    if (rememberMe) {
+      localStorage.setItem('adminEmail', email);
+      localStorage.setItem('adminPassword', password);
+      localStorage.setItem('rememberAdmin', 'true');
+    } else {
+      localStorage.removeItem('adminEmail');
+      localStorage.removeItem('adminPassword');
+      localStorage.removeItem('rememberAdmin');
+    }
+    
     const success = await login(email, password);
     if (success) {
       navigate('/admin');
@@ -22,7 +49,7 @@ const AdminLogin = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-100 to-purple-100 py-12 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#800020]/20 to-purple-100 py-12 px-4">
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
@@ -48,7 +75,7 @@ const AdminLogin = () => {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#800020]"
                 placeholder="admin@jeechbaby.com"
                 required
               />
@@ -60,20 +87,43 @@ const AdminLogin = () => {
             <div className="relative">
               <FaLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#800020]"
                 placeholder="Enter your password"
                 required
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
+              </button>
             </div>
+          </div>
+
+          {/* Remember Me Checkbox */}
+          <div className="flex items-center justify-between">
+            <label className="flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="w-4 h-4 text-[#800020] border-gray-300 rounded focus:ring-[#800020] cursor-pointer"
+              />
+              <span className="ml-2 text-sm text-gray-600">Remember me</span>
+            </label>
+            <a href="#" className="text-sm text-[#800020] hover:underline">
+              Forgot password?
+            </a>
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-primary text-white py-3 rounded-xl font-semibold text-lg hover:bg-opacity-90 transition-colors disabled:opacity-50"
+            className="w-full bg-[#800020] text-white py-3 rounded-xl font-semibold text-lg hover:bg-opacity-90 transition-colors disabled:opacity-50"
           >
             {loading ? 'Logging in...' : 'Login to Dashboard'}
           </button>
