@@ -2,10 +2,10 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './contexts/AuthContext';
-import Navbar from './components/layout/Navbar';
-import Footer from './components/layout/Footer';
-import FloatingWhatsApp from "./components/layout/FloatingWhatsapp";
-import BackgroundEffects from './components/layout/BackgroundEffects';
+import Navbar from './components/Layout/Navbar';
+import Footer from './components/Layout/Footer';
+import FloatingWhatsApp from "./components/Layout/FloatingWhatsapp";
+import BackgroundEffects from './components/Layout/BackgroundEffects';
 import FloatingInstallButton from './components/UI/FloatingInstallButton';
 import SplashScreen from './components/UI/SplashScreen';
 import Home from './pages/Home';
@@ -33,18 +33,13 @@ function App() {
           <Navbar />
           <main className="relative z-10 pt-16">
             <Routes>
-              {/* Public Routes */}
               <Route path="/" element={<Home />} />
               <Route path="/shop" element={<Shop />} />
               <Route path="/product/:id" element={<ProductDetails />} />
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/gallery" element={<ImageGallery />} />
-              
-              {/* Admin Auth */}
               <Route path="/admin-login" element={<AdminLogin />} />
-              
-              {/* Protected Admin Routes */}
               <Route path="/admin" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/admin/products" element={<ProtectedRoute><Products /></ProtectedRoute>} />
               <Route path="/admin/bulk-upload" element={<ProtectedRoute><BulkUpload /></ProtectedRoute>} />
