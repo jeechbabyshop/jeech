@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { FaSearch, FaWhatsapp, FaTimes, FaDownload, FaShare, FaHeart, FaRegHeart, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import { supabase, PRODUCTS_BUCKET } from '../services/supabase';
 import Loader from '../components/UI/Loader';
@@ -10,6 +10,7 @@ const ImageGallery = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedImage, setSelectedImage] = useState(null);
+  const [previewLoaded, setPreviewLoaded] = useState(false);
   const [wishlist, setWishlist] = useState([]);
   const [loadedImages, setLoadedImages] = useState({});
   const [page, setPage] = useState(1);
@@ -68,11 +69,9 @@ const ImageGallery = () => {
     }
   }, [searchTerm, images]);
 
-  // Pagination - show only current page images
   const displayedImages = filteredImages.slice(0, page * imagesPerPage);
   const hasMoreImages = displayedImages.length < filteredImages.length;
 
-  // Infinite scroll with Intersection Observer
   useEffect(() => {
     if (loading) return;
     
@@ -129,8 +128,12 @@ const ImageGallery = () => {
     setLoadedImages(prev => ({ ...prev, [imageId]: true }));
   };
 
-  // Navigate through images in lightbox
+  const handlePreviewLoad = () => {
+    setPreviewLoaded(true);
+  };
+
   const nextImage = () => {
+    setPreviewLoaded(false);
     const currentIndex = filteredImages.findIndex(img => img.id === selectedImage?.id);
     if (currentIndex < filteredImages.length - 1) {
       setSelectedImage(filteredImages[currentIndex + 1]);
@@ -138,13 +141,13 @@ const ImageGallery = () => {
   };
 
   const prevImage = () => {
+    setPreviewLoaded(false);
     const currentIndex = filteredImages.findIndex(img => img.id === selectedImage?.id);
     if (currentIndex > 0) {
       setSelectedImage(filteredImages[currentIndex - 1]);
     }
   };
 
-  // Keyboard navigation for lightbox
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (!selectedImage) return;
@@ -156,7 +159,6 @@ const ImageGallery = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedImage, filteredImages]);
 
-  // Baby loading face component
   const BabyLoadingFace = () => (
     <div className="flex flex-col items-center justify-center p-4">
       <motion.div
@@ -179,6 +181,32 @@ const ImageGallery = () => {
         className="text-xs text-pink-400 font-medium"
       >
         Loading...
+      </motion.div>
+    </div>
+  );
+
+  const PreviewBabyLoadingFace = () => (
+    <div className="flex flex-col items-center justify-center min-w-[300px] min-h-[300px]">
+      <motion.div
+        animate={{ 
+          y: [0, -15, 0],
+          rotate: [0, 15, -15, 0]
+        }}
+        transition={{ 
+          duration: 1.2, 
+          repeat: Infinity,
+          ease: "easeInOut"
+        }}
+        className="text-7xl mb-3"
+      >
+        👶
+      </motion.div>
+      <motion.div
+        animate={{ opacity: [0.4, 1, 0.4] }}
+        transition={{ duration: 1, repeat: Infinity }}
+        className="text-sm text-pink-400 font-medium"
+      >
+        Loading image...
       </motion.div>
     </div>
   );
@@ -221,7 +249,7 @@ const ImageGallery = () => {
         </p>
       </div>
 
-      {/* Image Grid with Baby Loading Face */}
+      {/* Image Grid */}
       {loading ? (
         <Loader />
       ) : filteredImages.length === 0 ? (
@@ -240,9 +268,11 @@ const ImageGallery = () => {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: Math.min(idx * 0.01, 0.5) }}
                 className="group relative cursor-pointer"
-                onClick={() => setSelectedImage(image)}
+                onClick={() => {
+                  setPreviewLoaded(false);
+                  setSelectedImage(image);
+                }}
               >
-                {/* Lazy loading with BABY FACE */}
                 <div className="aspect-square overflow-hidden rounded-xl bg-gradient-to-br from-pink-100 to-purple-100 shadow-md relative">
                   {!loadedImages[image.id] && (
                     <div className="absolute inset-0 flex items-center justify-center">
@@ -264,7 +294,6 @@ const ImageGallery = () => {
                   />
                 </div>
                 
-                {/* Overlay on hover */}
                 <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl flex items-center justify-center gap-3">
                   <button
                     onClick={(e) => {
@@ -304,12 +333,10 @@ const ImageGallery = () => {
                   </button>
                 </div>
                 
-                {/* Image name */}
                 <p className="text-xs text-gray-500 mt-1 truncate text-center">
                   {image.name.length > 30 ? image.name.substring(0, 27) + '...' : image.name}
                 </p>
                 
-                {/* Loaded checkmark */}
                 {loadedImages[image.id] && (
                   <div className="absolute top-2 right-2 bg-green-500 text-white rounded-full p-0.5 text-[10px]">
                     ✓
@@ -319,7 +346,6 @@ const ImageGallery = () => {
             ))}
           </div>
           
-          {/* Infinite scroll trigger with baby face */}
           {hasMoreImages && (
             <div ref={observerRef} className="flex justify-center py-8">
               <div className="flex flex-col items-center">
@@ -340,71 +366,114 @@ const ImageGallery = () => {
         </>
       )}
 
-      {/* Lightbox Modal for viewing full-size images */}
-      {selectedImage && (
-        <div 
-          className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4"
-          onClick={() => setSelectedImage(null)}
-        >
-          <button
+      {/* Lightbox Modal - Transparent Background with Baby Loading Face */}
+      <AnimatePresence>
+        {selectedImage && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-black/40 backdrop-blur-md flex items-center justify-center p-4"
             onClick={() => setSelectedImage(null)}
-            className="absolute top-4 right-4 text-white text-3xl hover:text-gray-300 transition"
           >
-            <FaTimes />
-          </button>
-          
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              prevImage();
-            }}
-            className="absolute left-4 text-white text-3xl hover:text-gray-300 transition disabled:opacity-50"
-          >
-            <FaChevronLeft />
-          </button>
-          
-          <div className="max-w-4xl max-h-[80vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
-            <img
-              src={selectedImage.optimized || selectedImage.url}
-              alt={selectedImage.name}
-              className="w-full h-full object-contain rounded-lg"
-            />
-            <div className="mt-4 text-center text-white">
-              <p className="text-sm mb-2">{selectedImage.name}</p>
-              <div className="flex gap-3 justify-center">
-                <button
-                  onClick={() => downloadImage(selectedImage.url, selectedImage.name)}
-                  className="bg-white/20 px-4 py-2 rounded-lg hover:bg-white/30 transition flex items-center gap-2"
-                >
-                  <FaDownload /> Download
-                </button>
-                <button
-                  onClick={() => shareImage(selectedImage.url, selectedImage.name)}
-                  className="bg-white/20 px-4 py-2 rounded-lg hover:bg-white/30 transition flex items-center gap-2"
-                >
-                  <FaShare /> Share
-                </button>
-                <button
-                  onClick={() => orderOnWhatsApp(selectedImage.url, selectedImage.name)}
-                  className="bg-green-500 px-4 py-2 rounded-lg hover:bg-green-600 transition flex items-center gap-2"
-                >
-                  <FaWhatsapp /> Order on WhatsApp
-                </button>
-              </div>
+            {/* Close Button */}
+            <button
+              onClick={() => setSelectedImage(null)}
+              className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm rounded-full p-2 hover:bg-white/30 transition z-20"
+            >
+              <FaTimes size={20} className="text-white" />
+            </button>
+            
+            {/* Previous Button */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                prevImage();
+              }}
+              disabled={filteredImages.findIndex(img => img.id === selectedImage.id) === 0}
+              className={`absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/20 backdrop-blur-sm rounded-full p-3 hover:bg-white/30 transition z-20 ${
+                filteredImages.findIndex(img => img.id === selectedImage.id) === 0 ? 'opacity-30 cursor-not-allowed' : 'opacity-100'
+              }`}
+            >
+              <FaChevronLeft size={24} className="text-white" />
+            </button>
+            
+            {/* Next Button */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                nextImage();
+              }}
+              disabled={filteredImages.findIndex(img => img.id === selectedImage.id) === filteredImages.length - 1}
+              className={`absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/20 backdrop-blur-sm rounded-full p-3 hover:bg-white/30 transition z-20 ${
+                filteredImages.findIndex(img => img.id === selectedImage.id) === filteredImages.length - 1 ? 'opacity-30 cursor-not-allowed' : 'opacity-100'
+              }`}
+            >
+              <FaChevronRight size={24} className="text-white" />
+            </button>
+            
+            {/* Image Container */}
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="max-w-5xl max-h-[85vh] overflow-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Baby Loading Face while image loads */}
+              {!previewLoaded && (
+                <div className="min-w-[400px] min-h-[400px] flex items-center justify-center bg-white/10 backdrop-blur-sm rounded-2xl">
+                  <PreviewBabyLoadingFace />
+                </div>
+              )}
+              
+              <img
+                src={selectedImage.optimized || selectedImage.url}
+                alt={selectedImage.name}
+                className={`max-w-full max-h-[75vh] object-contain rounded-2xl shadow-2xl transition-opacity duration-500 ${
+                  previewLoaded ? 'opacity-100' : 'opacity-0 absolute'
+                }`}
+                onLoad={handlePreviewLoad}
+              />
+              
+              {previewLoaded && (
+                <div className="mt-4 text-center">
+                  <p className="text-sm text-white font-medium mb-1">{selectedImage.name}</p>
+                  <div className="flex justify-between items-center text-white/70 text-xs mb-3">
+                    <span>Size: {selectedImage.size} KB</span>
+                    <span>{filteredImages.findIndex(img => img.id === selectedImage.id) + 1} of {filteredImages.length}</span>
+                  </div>
+                  <div className="flex gap-3 justify-center">
+                    <button
+                      onClick={() => downloadImage(selectedImage.url, selectedImage.name)}
+                      className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-lg hover:bg-white/30 transition flex items-center gap-2 text-sm text-white"
+                    >
+                      <FaDownload size={14} /> Download
+                    </button>
+                    <button
+                      onClick={() => shareImage(selectedImage.url, selectedImage.name)}
+                      className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-lg hover:bg-white/30 transition flex items-center gap-2 text-sm text-white"
+                    >
+                      <FaShare size={14} /> Share
+                    </button>
+                    <button
+                      onClick={() => orderOnWhatsApp(selectedImage.url, selectedImage.name)}
+                      className="bg-green-500/80 backdrop-blur-sm px-4 py-2 rounded-lg hover:bg-green-600 transition flex items-center gap-2 text-sm text-white"
+                    >
+                      <FaWhatsapp size={14} /> Order
+                    </button>
+                  </div>
+                </div>
+              )}
+            </motion.div>
+            
+            {/* Image counter indicator */}
+            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/50 backdrop-blur-sm text-white text-xs px-3 py-1 rounded-full z-20">
+              {filteredImages.findIndex(img => img.id === selectedImage.id) + 1} / {filteredImages.length}
             </div>
-          </div>
-          
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              nextImage();
-            }}
-            className="absolute right-4 text-white text-3xl hover:text-gray-300 transition"
-          >
-            <FaChevronRight />
-          </button>
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
