@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaBell, FaCheckDouble, FaTrash } from 'react-icons/fa';
+import { FaBell, FaCheckDouble } from 'react-icons/fa';
 import { db } from '../../services/firebase';
-import { collection, query, orderBy, onSnapshot, updateDoc, doc, deleteDoc } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, updateDoc, doc } from 'firebase/firestore';
 import { useAuth } from '../../contexts/AuthContext';
 import toast from 'react-hot-toast';
 
@@ -17,7 +17,6 @@ const NotificationBell = () => {
   useEffect(() => {
     if (!user) return;
 
-    // Real-time listener for messages - only get unread or recent messages
     const messagesRef = collection(db, 'messages');
     const q = query(messagesRef, orderBy('createdAt', 'desc'));
     
@@ -28,18 +27,14 @@ const NotificationBell = () => {
         createdAt: doc.data().createdAt?.toDate()
       }));
       
-      // Only keep unread messages in the dropdown (or last 10 if you want)
       const unreadMessages = messageList.filter(msg => !msg.read);
-      const recentMessages = messageList.slice(0, 10);
       
-      setMessages(unreadMessages); // Only show unread messages in dropdown
+      setMessages(unreadMessages);
       const unread = messageList.filter(msg => !msg.read).length;
       setUnreadCount(unread);
       
-      // Update favicon badge
       updateFaviconBadge(unread);
       
-      // Update document title
       if (unread > 0) {
         document.title = `(${unread}) Jeech Baby Shop`;
       } else {
@@ -50,63 +45,53 @@ const NotificationBell = () => {
     return () => unsubscribe();
   }, [user]);
 
-  // Request notification permission
-  useEffect(() => {
-    if ('Notification' in window && Notification.permission !== 'granted' && user) {
-      Notification.requestPermission();
-    }
-  }, [user]);
+  // Check if mobile device
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
-  // Show notification for new messages
+  // Request notification permission - ONLY on desktop or if user explicitly wants
   useEffect(() => {
-    if (messages.length > 0 && user) {
-      const latestMessage = messages[0];
-      if (latestMessage && !latestMessage.read) {
-        if (Notification.permission === 'granted') {
-          const notification = new Notification('New Message from Jeech Baby Shop', {
-            body: `From: ${latestMessage.name}\nMessage: ${latestMessage.message.substring(0, 50)}...`,
-            icon: '/logo.png',
-            badge: '/logo.png',
-            data: {
-              messageId: latestMessage.id,
-              url: '/admin/messages'
-            }
-          });
-          
-          notification.onclick = async (event) => {
-            event.preventDefault();
-            window.focus();
-            await markAsRead(latestMessage.id);
-            navigate('/admin/messages');
-            notification.close();
-          };
+    // Skip notifications on mobile to prevent white screen
+    if (!user || isMobile) return;
+    
+    if ('Notification' in window && Notification.permission !== 'granted') {
+      // Don't auto-request on mobile
+      setTimeout(() => {
+        if (Notification.permission === 'default') {
+          Notification.requestPermission();
         }
+      }, 5000);
+    }
+  }, [user, isMobile]);
+
+  // Show browser notification for new messages - DISABLED ON MOBILE
+  useEffect(() => {
+    // Skip notifications entirely on mobile to prevent white screen
+    if (!user || messages.length === 0 || isMobile) return;
+    
+    const latestMessage = messages[0];
+    if (latestMessage && !latestMessage.read) {
+      if (Notification.permission === 'granted') {
+        const notification = new Notification('New Message from Jeech Baby Shop', {
+          body: `From: ${latestMessage.name}\nMessage: ${latestMessage.message.substring(0, 50)}...`,
+          icon: '/logo.png',
+          badge: '/logo.png',
+          silent: true, // Prevent vibration on mobile
+          data: {
+            messageId: latestMessage.id,
+            url: '/admin/messages'
+          }
+        });
         
-        toast.custom((t) => (
-          <div 
-            className="bg-white rounded-lg shadow-lg p-4 max-w-sm w-full border-l-4 border-pink-500 cursor-pointer"
-            onClick={async () => {
-              await markAsRead(latestMessage.id);
-              navigate('/admin/messages');
-              toast.dismiss(t.id);
-            }}
-          >
-            <div className="flex items-start gap-3">
-              <div className="bg-pink-100 rounded-full p-2">
-                <FaBell className="text-pink-500" />
-              </div>
-              <div className="flex-1">
-                <p className="font-semibold text-gray-800 text-sm">New Message!</p>
-                <p className="text-xs text-gray-600">From: {latestMessage.name}</p>
-                <p className="text-xs text-gray-500 mt-1">{latestMessage.message.substring(0, 50)}...</p>
-              </div>
-              <button onClick={(e) => { e.stopPropagation(); toast.dismiss(t.id); }} className="text-gray-400">✕</button>
-            </div>
-          </div>
-        ), { duration: 5000 });
+        notification.onclick = (event) => {
+          event.preventDefault();
+          window.focus();
+          markAsRead(latestMessage.id);
+          navigate('/admin/messages');
+          notification.close();
+        };
       }
     }
-  }, [messages, user]);
+  }, [messages, user, isMobile]);
 
   const updateFaviconBadge = (count) => {
     const favicon = document.querySelector('link[rel="icon"]');
@@ -143,7 +128,6 @@ const NotificationBell = () => {
   const markAsRead = async (messageId) => {
     try {
       await updateDoc(doc(db, 'messages', messageId), { read: true });
-      // Remove from local state immediately (no need to wait for re-fetch)
       setMessages(prev => prev.filter(msg => msg.id !== messageId));
       setUnreadCount(prev => Math.max(0, prev - 1));
       toast.success('Message marked as read');
@@ -162,14 +146,12 @@ const NotificationBell = () => {
         return;
       }
       
-      // Update each unread message
       const updatePromises = unreadMessages.map(msg => 
         updateDoc(doc(db, 'messages', msg.id), { read: true })
       );
       
       await Promise.all(updatePromises);
       
-      // Clear all messages from dropdown immediately
       setMessages([]);
       setUnreadCount(0);
       
@@ -227,14 +209,12 @@ const NotificationBell = () => {
                   </p>
                 </div>
                 {unreadCount > 0 && (
-                  <div className="flex gap-2">
-                    <button
-                      onClick={markAllAsRead}
-                      className="text-xs text-primary hover:underline flex items-center gap-1"
-                    >
-                      <FaCheckDouble size={10} /> Mark all read
-                    </button>
-                  </div>
+                  <button
+                    onClick={markAllAsRead}
+                    className="text-xs text-primary hover:underline flex items-center gap-1"
+                  >
+                    <FaCheckDouble size={10} /> Mark all read
+                  </button>
                 )}
               </div>
               
