@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FaEnvelope, FaPhone, FaUser, FaCalendar, FaReply, FaWhatsapp, FaCheck, FaEye } from 'react-icons/fa';
+import { FaEnvelope, FaPhone, FaUser, FaCalendar, FaReply, FaWhatsapp, FaCheck, FaEye, FaTrash } from 'react-icons/fa';
 import Sidebar from '../../components/Admin/Sidebar';
 import { getMessages } from '../../services/firestore';
 import { db } from '../../services/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import toast from 'react-hot-toast';
 
 const Messages = () => {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedMessage, setSelectedMessage] = useState(null);
+  const [popupShown, setPopupShown] = useState(false);
 
   useEffect(() => {
     fetchMessages();
@@ -25,7 +26,6 @@ const Messages = () => {
   const markAsRead = async (messageId) => {
     try {
       await updateDoc(doc(db, 'messages', messageId), { read: true });
-      // Update local state
       setMessages(prev => prev.map(msg => 
         msg.id === messageId ? { ...msg, read: true } : msg
       ));
@@ -41,7 +41,6 @@ const Messages = () => {
   const markAsUnread = async (messageId) => {
     try {
       await updateDoc(doc(db, 'messages', messageId), { read: false });
-      // Update local state
       setMessages(prev => prev.map(msg => 
         msg.id === messageId ? { ...msg, read: false } : msg
       ));
@@ -54,6 +53,37 @@ const Messages = () => {
     }
   };
 
+  const deleteMessage = async (messageId) => {
+    if (window.confirm('Are you sure you want to delete this message? This action cannot be undone.')) {
+      try {
+        await deleteDoc(doc(db, 'messages', messageId));
+        setMessages(prev => prev.filter(msg => msg.id !== messageId));
+        if (selectedMessage?.id === messageId) {
+          setSelectedMessage(null);
+        }
+        toast.success('Message deleted successfully');
+      } catch (error) {
+        console.error('Error deleting message:', error);
+        toast.error('Failed to delete message');
+      }
+    }
+  };
+
+  const deleteAllMessages = async () => {
+    if (window.confirm(`Are you sure you want to delete ALL ${messages.length} messages? This action cannot be undone.`)) {
+      try {
+        const deletePromises = messages.map(msg => deleteDoc(doc(db, 'messages', msg.id)));
+        await Promise.all(deletePromises);
+        setMessages([]);
+        setSelectedMessage(null);
+        toast.success('All messages deleted successfully');
+      } catch (error) {
+        console.error('Error deleting all messages:', error);
+        toast.error('Failed to delete all messages');
+      }
+    }
+  };
+
   const markAllAsRead = async () => {
     try {
       const unreadMessages = messages.filter(msg => !msg.read);
@@ -63,14 +93,12 @@ const Messages = () => {
         return;
       }
       
-      // Update each unread message
       const updatePromises = unreadMessages.map(msg => 
         updateDoc(doc(db, 'messages', msg.id), { read: true })
       );
       
       await Promise.all(updatePromises);
       
-      // Update local state
       setMessages(prev => prev.map(msg => ({ ...msg, read: true })));
       if (selectedMessage && !selectedMessage.read) {
         setSelectedMessage(prev => ({ ...prev, read: true }));
@@ -88,7 +116,6 @@ const Messages = () => {
     const whatsappUrl = `https://wa.me/${phone.replace(/\D/g, '')}?text=${encodeURIComponent(replyText)}`;
     window.open(whatsappUrl, '_blank');
     
-    // Mark as read when replying
     if (selectedMessage && !selectedMessage.read) {
       markAsRead(selectedMessage.id);
     }
@@ -96,11 +123,32 @@ const Messages = () => {
 
   const handleSelectMessage = (msg) => {
     setSelectedMessage(msg);
-    // Mark as read when selected
     if (!msg.read) {
       markAsRead(msg.id);
     }
   };
+
+  // Show popup only once when there are unread messages
+  useEffect(() => {
+    const unreadCount = messages.filter(m => !m.read).length;
+    if (unreadCount > 0 && !popupShown && !loading) {
+      setPopupShown(true);
+      toast.custom((t) => (
+        <div className="bg-white rounded-lg shadow-lg p-4 max-w-sm w-full border-l-4 border-pink-500">
+          <div className="flex items-start gap-3">
+            <div className="bg-pink-100 rounded-full p-2">
+              <FaEnvelope className="text-pink-500" />
+            </div>
+            <div className="flex-1">
+              <p className="font-semibold text-gray-800 text-sm">You have unread messages!</p>
+              <p className="text-xs text-gray-600 mt-1">{unreadCount} new message{unreadCount > 1 ? 's' : ''} waiting for you</p>
+            </div>
+            <button onClick={() => toast.dismiss(t.id)} className="text-gray-400">✕</button>
+          </div>
+        </div>
+      ), { duration: 5000 });
+    }
+  }, [messages, loading, popupShown]);
 
   const unreadCount = messages.filter(m => !m.read).length;
 
@@ -108,16 +156,26 @@ const Messages = () => {
     <div className="flex">
       <Sidebar />
       <div className="flex-1 p-8">
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex justify-between items-center mb-8 flex-wrap gap-4">
           <h1 className="text-3xl font-bold text-gray-800">Customer Messages</h1>
-          {unreadCount > 0 && (
-            <button
-              onClick={markAllAsRead}
-              className="bg-primary text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-opacity-90 transition"
-            >
-              <FaCheck /> Mark All Read ({unreadCount})
-            </button>
-          )}
+          <div className="flex gap-3">
+            {messages.length > 0 && (
+              <button
+                onClick={deleteAllMessages}
+                className="bg-red-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-red-600 transition"
+              >
+                <FaTrash /> Delete All ({messages.length})
+              </button>
+            )}
+            {unreadCount > 0 && (
+              <button
+                onClick={markAllAsRead}
+                className="bg-primary text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-opacity-90 transition"
+              >
+                <FaCheck /> Mark All Read ({unreadCount})
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-6">
@@ -136,37 +194,48 @@ const Messages = () => {
                 <div className="p-8 text-center text-gray-500">No messages yet</div>
               ) : (
                 messages.map((msg) => (
-                  <button
+                  <div
                     key={msg.id}
-                    onClick={() => handleSelectMessage(msg)}
-                    className={`w-full text-left p-4 hover:bg-gray-50 transition-colors ${
+                    className={`relative group ${
                       selectedMessage?.id === msg.id ? 'bg-pink-50' : ''
                     } ${!msg.read ? 'border-l-4 border-pink-500' : ''}`}
                   >
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex items-center gap-2">
-                        <FaUser className={`${!msg.read ? 'text-pink-500' : 'text-gray-400'}`} />
-                        <span className={`font-semibold ${!msg.read ? 'text-pink-600' : 'text-gray-800'}`}>
-                          {msg.name}
+                    <button
+                      onClick={() => handleSelectMessage(msg)}
+                      className="w-full text-left p-4 hover:bg-gray-50 transition-colors pr-12"
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex items-center gap-2">
+                          <FaUser className={`${!msg.read ? 'text-pink-500' : 'text-gray-400'}`} />
+                          <span className={`font-semibold ${!msg.read ? 'text-pink-600' : 'text-gray-800'}`}>
+                            {msg.name}
+                          </span>
+                        </div>
+                        <span className="text-xs text-gray-400">
+                          {msg.createdAt?.toDate().toLocaleDateString()}
                         </span>
                       </div>
-                      <span className="text-xs text-gray-400">
-                        {msg.createdAt?.toDate().toLocaleDateString()}
-                      </span>
-                    </div>
-                    <p className="text-sm text-gray-600 line-clamp-2">{msg.message}</p>
-                    <div className="flex items-center justify-between mt-2">
-                      <div className="flex items-center gap-2 text-xs text-gray-400">
-                        <FaPhone size={10} /> {msg.phone}
+                      <p className="text-sm text-gray-600 line-clamp-2">{msg.message}</p>
+                      <div className="flex items-center justify-between mt-2">
+                        <div className="flex items-center gap-2 text-xs text-gray-400">
+                          <FaPhone size={10} /> {msg.phone}
+                        </div>
+                        {!msg.read && (
+                          <span className="text-xs text-pink-500 font-medium">New</span>
+                        )}
+                        {msg.read && (
+                          <FaCheck size={10} className="text-green-500" />
+                        )}
                       </div>
-                      {!msg.read && (
-                        <span className="text-xs text-pink-500 font-medium">New</span>
-                      )}
-                      {msg.read && (
-                        <FaCheck size={10} className="text-green-500" />
-                      )}
-                    </div>
-                  </button>
+                    </button>
+                    <button
+                      onClick={() => deleteMessage(msg.id)}
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-red-500 text-white p-1.5 rounded-full hover:bg-red-600"
+                      title="Delete message"
+                    >
+                      <FaTrash size={12} />
+                    </button>
+                  </div>
                 ))
               )}
             </div>
@@ -180,9 +249,9 @@ const Messages = () => {
                 animate={{ opacity: 1 }}
               >
                 <div className="border-b pb-4 mb-4">
-                  <div className="flex justify-between items-start">
+                  <div className="flex justify-between items-start flex-wrap gap-4">
                     <div>
-                      <div className="flex items-center gap-2 mb-2">
+                      <div className="flex items-center gap-2 mb-2 flex-wrap">
                         <h2 className="text-2xl font-bold text-gray-800">{selectedMessage.name}</h2>
                         {!selectedMessage.read && (
                           <span className="bg-pink-100 text-pink-600 text-xs px-2 py-1 rounded-full">
@@ -209,12 +278,11 @@ const Messages = () => {
                         </span>
                       </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
                       {selectedMessage.read ? (
                         <button
                           onClick={() => markAsUnread(selectedMessage.id)}
                           className="bg-gray-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-gray-600"
-                          title="Mark as unread"
                         >
                           <FaEye /> Mark Unread
                         </button>
@@ -222,11 +290,16 @@ const Messages = () => {
                         <button
                           onClick={() => markAsRead(selectedMessage.id)}
                           className="bg-green-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-600"
-                          title="Mark as read"
                         >
                           <FaCheck /> Mark Read
                         </button>
                       )}
+                      <button
+                        onClick={() => deleteMessage(selectedMessage.id)}
+                        className="bg-red-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-red-600"
+                      >
+                        <FaTrash /> Delete
+                      </button>
                       <button
                         onClick={() => handleReply(selectedMessage.phone, selectedMessage.message)}
                         className="bg-green-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-600"
