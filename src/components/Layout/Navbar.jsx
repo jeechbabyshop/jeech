@@ -89,7 +89,7 @@ const Navbar = () => {
               <img 
                 src="/logo.png" 
                 alt="Jeech Baby Shop Logo" 
-                className="h-8 sm:h-10 md:h-14 w-auto object-contain relative z-10 group-hover:scale-105 transition-transform cursor-pointer drop-shadow-lg"
+                className="h-8 sm:h-10 md:h-16w-auto object-contain relative z-10 group-hover:scale-105 transition-transform cursor-pointer drop-shadow-lg"
                 onDoubleClick={handleLogoDoubleClick}
                 title="Double-click logo for admin access"
               />

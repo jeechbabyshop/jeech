@@ -1,164 +1,56 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { FaBell, FaCheckDouble, FaTrashAlt, FaTimes } from 'react-icons/fa';
+import { motion } from 'framer-motion';
+import { FaEnvelope, FaPhone, FaUser, FaCalendar, FaReply, FaWhatsapp, FaCheck, FaEye } from 'react-icons/fa';
+import Sidebar from '../../components/Admin/Sidebar';
+import { getMessages } from '../../services/firestore';
 import { db } from '../../services/firebase';
-import { collection, query, orderBy, onSnapshot, updateDoc, doc, deleteDoc, where, limit } from 'firebase/firestore';
-import { useAuth } from '../../contexts/AuthContext';
+import { doc, updateDoc } from 'firebase/firestore';
 import toast from 'react-hot-toast';
 
-const NotificationBell = () => {
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [showDropdown, setShowDropdown] = useState(false);
+const Messages = () => {
   const [messages, setMessages] = useState([]);
-  const { user } = useAuth();
-  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [selectedMessage, setSelectedMessage] = useState(null);
 
   useEffect(() => {
-    if (!user) return;
+    fetchMessages();
+  }, []);
 
-    // Get only unread messages from the last 7 days
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    
-    const messagesRef = collection(db, 'messages');
-    const q = query(
-      messagesRef, 
-      orderBy('createdAt', 'desc')
-    );
-    
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const messageList = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt?.toDate()
-      }));
-      
-      // Filter: only unread messages from last 7 days
-      const unreadMessages = messageList.filter(msg => {
-        const isUnread = !msg.read;
-        const isRecent = msg.createdAt >= sevenDaysAgo;
-        return isUnread && isRecent;
-      });
-      
-      setMessages(unreadMessages);
-      const unread = messageList.filter(msg => !msg.read).length;
-      setUnreadCount(unread);
-      
-      // Update favicon badge
-      updateFaviconBadge(unread);
-      
-      // Update document title
-      if (unread > 0) {
-        document.title = `(${unread}) Jeech Baby Shop`;
-      } else {
-        document.title = 'Jeech Baby Shop';
-      }
-    });
-
-    return () => unsubscribe();
-  }, [user]);
-
-  // Request notification permission
-  useEffect(() => {
-    if ('Notification' in window && Notification.permission !== 'granted' && user) {
-      Notification.requestPermission();
-    }
-  }, [user]);
-
-  // Show notification for new messages
-  useEffect(() => {
-    if (messages.length > 0 && user) {
-      const latestMessage = messages[0];
-      if (latestMessage && !latestMessage.read) {
-        if (Notification.permission === 'granted') {
-          const notification = new Notification('New Message from Jeech Baby Shop', {
-            body: `From: ${latestMessage.name}\nMessage: ${latestMessage.message.substring(0, 50)}...`,
-            icon: '/logo.png',
-            badge: '/logo.png',
-            data: {
-              messageId: latestMessage.id,
-              url: '/admin/messages'
-            }
-          });
-          
-          notification.onclick = async (event) => {
-            event.preventDefault();
-            window.focus();
-            await markAsRead(latestMessage.id);
-            navigate('/admin/messages');
-            notification.close();
-          };
-        }
-        
-        toast.custom((t) => (
-          <div 
-            className="bg-white rounded-lg shadow-lg p-4 max-w-sm w-full border-l-4 border-pink-500 cursor-pointer"
-            onClick={async () => {
-              await markAsRead(latestMessage.id);
-              navigate('/admin/messages');
-              toast.dismiss(t.id);
-            }}
-          >
-            <div className="flex items-start gap-3">
-              <div className="bg-pink-100 rounded-full p-2">
-                <FaBell className="text-pink-500" />
-              </div>
-              <div className="flex-1">
-                <p className="font-semibold text-gray-800 text-sm">New Message!</p>
-                <p className="text-xs text-gray-600">From: {latestMessage.name}</p>
-                <p className="text-xs text-gray-500 mt-1">{latestMessage.message.substring(0, 50)}...</p>
-              </div>
-              <button onClick={(e) => { e.stopPropagation(); toast.dismiss(t.id); }} className="text-gray-400">✕</button>
-            </div>
-          </div>
-        ), { duration: 5000 });
-      }
-    }
-  }, [messages, user]);
-
-  const updateFaviconBadge = (count) => {
-    const favicon = document.querySelector('link[rel="icon"]');
-    if (!favicon) return;
-    
-    if (count > 0) {
-      const canvas = document.createElement('canvas');
-      const img = new Image();
-      img.src = '/logo.png';
-      img.onload = () => {
-        canvas.width = 32;
-        canvas.height = 32;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, 32, 32);
-        
-        ctx.beginPath();
-        ctx.arc(24, 8, 8, 0, 2 * Math.PI);
-        ctx.fillStyle = '#FF4444';
-        ctx.fill();
-        
-        ctx.fillStyle = 'white';
-        ctx.font = 'bold 12px Arial';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(count > 9 ? '9+' : count.toString(), 24, 8);
-        
-        favicon.href = canvas.toDataURL('image/png');
-      };
-    } else {
-      favicon.href = '/logo.png';
-    }
+  const fetchMessages = async () => {
+    const data = await getMessages();
+    setMessages(data);
+    setLoading(false);
   };
 
   const markAsRead = async (messageId) => {
     try {
       await updateDoc(doc(db, 'messages', messageId), { read: true });
-      // Remove from local state immediately
-      setMessages(prev => prev.filter(msg => msg.id !== messageId));
-      setUnreadCount(prev => Math.max(0, prev - 1));
+      // Update local state
+      setMessages(prev => prev.map(msg => 
+        msg.id === messageId ? { ...msg, read: true } : msg
+      ));
+      if (selectedMessage?.id === messageId) {
+        setSelectedMessage(prev => ({ ...prev, read: true }));
+      }
       toast.success('Message marked as read');
     } catch (error) {
       console.error('Error marking as read:', error);
-      toast.error('Failed to mark as read');
+    }
+  };
+
+  const markAsUnread = async (messageId) => {
+    try {
+      await updateDoc(doc(db, 'messages', messageId), { read: false });
+      // Update local state
+      setMessages(prev => prev.map(msg => 
+        msg.id === messageId ? { ...msg, read: false } : msg
+      ));
+      if (selectedMessage?.id === messageId) {
+        setSelectedMessage(prev => ({ ...prev, read: false }));
+      }
+      toast.success('Message marked as unread');
+    } catch (error) {
+      console.error('Error marking as unread:', error);
     }
   };
 
@@ -171,15 +63,18 @@ const NotificationBell = () => {
         return;
       }
       
+      // Update each unread message
       const updatePromises = unreadMessages.map(msg => 
         updateDoc(doc(db, 'messages', msg.id), { read: true })
       );
       
       await Promise.all(updatePromises);
       
-      // Clear all messages from dropdown
-      setMessages([]);
-      setUnreadCount(0);
+      // Update local state
+      setMessages(prev => prev.map(msg => ({ ...msg, read: true })));
+      if (selectedMessage && !selectedMessage.read) {
+        setSelectedMessage(prev => ({ ...prev, read: true }));
+      }
       
       toast.success(`${unreadMessages.length} messages marked as read`);
     } catch (error) {
@@ -188,137 +83,198 @@ const NotificationBell = () => {
     }
   };
 
-  // Manual clear all notifications from dropdown (without marking as read)
-  const clearAllNotifications = () => {
-    setMessages([]);
-    toast.success('Notifications cleared from view');
+  const handleReply = (phone, message) => {
+    const replyText = `Hello, thank you for contacting Jeech Baby Shop. We received your message: "${message.substring(0, 50)}..." How can we help you today?`;
+    const whatsappUrl = `https://wa.me/${phone.replace(/\D/g, '')}?text=${encodeURIComponent(replyText)}`;
+    window.open(whatsappUrl, '_blank');
+    
+    // Mark as read when replying
+    if (selectedMessage && !selectedMessage.read) {
+      markAsRead(selectedMessage.id);
+    }
   };
 
-  // Remove single notification
-  const removeNotification = (e, messageId) => {
-    e.stopPropagation();
-    setMessages(prev => prev.filter(msg => msg.id !== messageId));
-    toast.success('Notification removed');
+  const handleSelectMessage = (msg) => {
+    setSelectedMessage(msg);
+    // Mark as read when selected
+    if (!msg.read) {
+      markAsRead(msg.id);
+    }
   };
 
-  const handleOpenMessage = async (messageId) => {
-    await markAsRead(messageId);
-    setShowDropdown(false);
-    navigate('/admin/messages');
-  };
-
-  if (!user) return null;
+  const unreadCount = messages.filter(m => !m.read).length;
 
   return (
-    <div className="relative">
-      <button
-        onClick={() => setShowDropdown(!showDropdown)}
-        className="relative text-gray-700 hover:text-pink-600 transition-colors p-2"
-      >
-        <FaBell size={20} />
-        <AnimatePresence>
+    <div className="flex">
+      <Sidebar />
+      <div className="flex-1 p-8">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-800">Customer Messages</h1>
           {unreadCount > 0 && (
-            <motion.span
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              exit={{ scale: 0 }}
-              className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold"
+            <button
+              onClick={markAllAsRead}
+              className="bg-primary text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-opacity-90 transition"
             >
-              {unreadCount > 9 ? '9+' : unreadCount}
-            </motion.span>
+              <FaCheck /> Mark All Read ({unreadCount})
+            </button>
           )}
-        </AnimatePresence>
-      </button>
+        </div>
 
-      <AnimatePresence>
-        {showDropdown && (
-          <>
-            <div className="fixed inset-0 z-40" onClick={() => setShowDropdown(false)} />
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="absolute right-0 mt-2 w-80 md:w-80 max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-2xl z-50 overflow-hidden"
-            >
-              <div className="p-4 border-b bg-pink-50 flex justify-between items-center">
-                <div>
-                  <h3 className="font-semibold text-gray-800">Notifications</h3>
-                  <p className="text-xs text-gray-500">
-                    {unreadCount === 0 ? 'No unread messages' : `${unreadCount} unread message${unreadCount > 1 ? 's' : ''}`}
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  {messages.length > 0 && (
-                    <>
-                      <button
-                        onClick={markAllAsRead}
-                        className="text-xs text-primary hover:underline flex items-center gap-1"
-                        title="Mark all as read"
-                      >
-                        <FaCheckDouble size={10} /> Mark all
-                      </button>
-                      <button
-                        onClick={clearAllNotifications}
-                        className="text-xs text-gray-500 hover:text-red-500 flex items-center gap-1"
-                        title="Clear all notifications"
-                      >
-                        <FaTrashAlt size={10} /> Clear
-                      </button>
-                    </>
-                  )}
-                </div>
-              </div>
-              
-              <div className="max-h-96 overflow-y-auto">
-                {messages.length === 0 ? (
-                  <div className="p-8 text-center text-gray-500">
-                    <FaBell className="text-4xl mx-auto mb-2 text-gray-300" />
-                    <p className="text-sm">No new notifications</p>
-                    <p className="text-xs text-gray-400 mt-1">All caught up! 🎉</p>
-                  </div>
-                ) : (
-                  messages.map((msg) => (
-                    <div
-                      key={msg.id}
-                      onClick={() => handleOpenMessage(msg.id)}
-                      className="group block p-4 border-b hover:bg-gray-50 transition cursor-pointer bg-pink-50/30 relative"
-                    >
-                      <button
-                        onClick={(e) => removeNotification(e, msg.id)}
-                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition text-gray-400 hover:text-red-500"
-                        title="Remove"
-                      >
-                        <FaTimes size={12} />
-                      </button>
-                      <div className="flex gap-3 pr-6">
-                        <div className="w-2 h-2 mt-2 rounded-full bg-pink-500 animate-pulse" />
-                        <div className="flex-1">
-                          <p className="font-semibold text-sm text-gray-800">{msg.name}</p>
-                          <p className="text-xs text-gray-500">{msg.phone}</p>
-                          <p className="text-xs text-gray-600 mt-1 line-clamp-2">{msg.message}</p>
-                          <p className="text-xs text-gray-400 mt-1">
-                            {msg.createdAt?.toLocaleDateString()} at {msg.createdAt?.toLocaleTimeString()}
-                          </p>
-                        </div>
+        <div className="grid lg:grid-cols-3 gap-6">
+          {/* Messages List */}
+          <div className="lg:col-span-1 bg-white rounded-2xl shadow-lg overflow-hidden">
+            <div className="p-4 bg-gray-50 border-b flex justify-between items-center">
+              <h2 className="font-semibold text-gray-800">All Messages ({messages.length})</h2>
+              <span className="text-xs text-pink-500">
+                {unreadCount} unread
+              </span>
+            </div>
+            <div className="divide-y max-h-[600px] overflow-y-auto">
+              {loading ? (
+                <div className="p-8 text-center">Loading...</div>
+              ) : messages.length === 0 ? (
+                <div className="p-8 text-center text-gray-500">No messages yet</div>
+              ) : (
+                messages.map((msg) => (
+                  <button
+                    key={msg.id}
+                    onClick={() => handleSelectMessage(msg)}
+                    className={`w-full text-left p-4 hover:bg-gray-50 transition-colors ${
+                      selectedMessage?.id === msg.id ? 'bg-pink-50' : ''
+                    } ${!msg.read ? 'border-l-4 border-pink-500' : ''}`}
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex items-center gap-2">
+                        <FaUser className={`${!msg.read ? 'text-pink-500' : 'text-gray-400'}`} />
+                        <span className={`font-semibold ${!msg.read ? 'text-pink-600' : 'text-gray-800'}`}>
+                          {msg.name}
+                        </span>
+                      </div>
+                      <span className="text-xs text-gray-400">
+                        {msg.createdAt?.toDate().toLocaleDateString()}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-600 line-clamp-2">{msg.message}</p>
+                    <div className="flex items-center justify-between mt-2">
+                      <div className="flex items-center gap-2 text-xs text-gray-400">
+                        <FaPhone size={10} /> {msg.phone}
+                      </div>
+                      {!msg.read && (
+                        <span className="text-xs text-pink-500 font-medium">New</span>
+                      )}
+                      {msg.read && (
+                        <FaCheck size={10} className="text-green-500" />
+                      )}
+                    </div>
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Message Detail */}
+          <div className="lg:col-span-2 bg-white rounded-2xl shadow-lg p-6">
+            {selectedMessage ? (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+              >
+                <div className="border-b pb-4 mb-4">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <h2 className="text-2xl font-bold text-gray-800">{selectedMessage.name}</h2>
+                        {!selectedMessage.read && (
+                          <span className="bg-pink-100 text-pink-600 text-xs px-2 py-1 rounded-full">
+                            New
+                          </span>
+                        )}
+                        {selectedMessage.read && (
+                          <span className="bg-green-100 text-green-600 text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                            <FaCheck size={10} /> Read
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap items-center gap-4 text-gray-500 text-sm">
+                        <span className="flex items-center gap-1">
+                          <FaPhone /> {selectedMessage.phone}
+                        </span>
+                        {selectedMessage.email && (
+                          <span className="flex items-center gap-1">
+                            <FaEnvelope /> {selectedMessage.email}
+                          </span>
+                        )}
+                        <span className="flex items-center gap-1">
+                          <FaCalendar /> {selectedMessage.createdAt?.toDate().toLocaleString()}
+                        </span>
                       </div>
                     </div>
-                  ))
-                )}
+                    <div className="flex gap-2">
+                      {selectedMessage.read ? (
+                        <button
+                          onClick={() => markAsUnread(selectedMessage.id)}
+                          className="bg-gray-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-gray-600"
+                          title="Mark as unread"
+                        >
+                          <FaEye /> Mark Unread
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => markAsRead(selectedMessage.id)}
+                          className="bg-green-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-600"
+                          title="Mark as read"
+                        >
+                          <FaCheck /> Mark Read
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleReply(selectedMessage.phone, selectedMessage.message)}
+                        className="bg-green-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-600"
+                      >
+                        <FaWhatsapp /> Reply on WhatsApp
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                
+                <div>
+                  <h3 className="font-semibold text-gray-700 mb-2">Message:</h3>
+                  <p className="text-gray-600 leading-relaxed bg-gray-50 p-4 rounded-lg">
+                    {selectedMessage.message}
+                  </p>
+                </div>
+
+                <div className="mt-6 pt-4 border-t">
+                  <h3 className="font-semibold text-gray-700 mb-2">Quick Actions:</h3>
+                  <div className="flex flex-wrap gap-3">
+                    <a
+                      href={`tel:${selectedMessage.phone}`}
+                      className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition"
+                    >
+                      Call Customer
+                    </a>
+                    <button
+                      onClick={() => handleReply(selectedMessage.phone, selectedMessage.message)}
+                      className="bg-green-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-600 transition"
+                    >
+                      <FaReply /> Reply via WhatsApp
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            ) : (
+              <div className="flex items-center justify-center h-96 text-gray-400">
+                <div className="text-center">
+                  <FaEnvelope className="text-6xl mx-auto mb-4" />
+                  <p>Select a message to view details</p>
+                </div>
               </div>
-              
-              <Link
-                to="/admin/messages"
-                onClick={() => setShowDropdown(false)}
-                className="block p-3 text-center text-sm text-primary font-semibold border-t hover:bg-gray-50"
-              >
-                View All Messages
-              </Link>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
 
-export default NotificationBell;
+export default Messages;

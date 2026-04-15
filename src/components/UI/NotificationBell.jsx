@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaBell } from 'react-icons/fa';
+import { FaBell, FaCheckDouble, FaTrash } from 'react-icons/fa';
 import { db } from '../../services/firebase';
-import { collection, query, orderBy, onSnapshot, updateDoc, doc, where, getDocs } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, updateDoc, doc, deleteDoc } from 'firebase/firestore';
 import { useAuth } from '../../contexts/AuthContext';
 import toast from 'react-hot-toast';
 
@@ -17,7 +17,7 @@ const NotificationBell = () => {
   useEffect(() => {
     if (!user) return;
 
-    // Real-time listener for messages
+    // Real-time listener for messages - only get unread or recent messages
     const messagesRef = collection(db, 'messages');
     const q = query(messagesRef, orderBy('createdAt', 'desc'));
     
@@ -28,7 +28,11 @@ const NotificationBell = () => {
         createdAt: doc.data().createdAt?.toDate()
       }));
       
-      setMessages(messageList);
+      // Only keep unread messages in the dropdown (or last 10 if you want)
+      const unreadMessages = messageList.filter(msg => !msg.read);
+      const recentMessages = messageList.slice(0, 10);
+      
+      setMessages(unreadMessages); // Only show unread messages in dropdown
       const unread = messageList.filter(msg => !msg.read).length;
       setUnreadCount(unread);
       
@@ -57,7 +61,7 @@ const NotificationBell = () => {
   useEffect(() => {
     if (messages.length > 0 && user) {
       const latestMessage = messages[0];
-      if (latestMessage && !latestMessage.read && unreadCount > 0) {
+      if (latestMessage && !latestMessage.read) {
         if (Notification.permission === 'granted') {
           const notification = new Notification('New Message from Jeech Baby Shop', {
             body: `From: ${latestMessage.name}\nMessage: ${latestMessage.message.substring(0, 50)}...`,
@@ -102,7 +106,7 @@ const NotificationBell = () => {
         ), { duration: 5000 });
       }
     }
-  }, [messages, user, unreadCount]);
+  }, [messages, user]);
 
   const updateFaviconBadge = (count) => {
     const favicon = document.querySelector('link[rel="icon"]');
@@ -139,8 +143,13 @@ const NotificationBell = () => {
   const markAsRead = async (messageId) => {
     try {
       await updateDoc(doc(db, 'messages', messageId), { read: true });
+      // Remove from local state immediately (no need to wait for re-fetch)
+      setMessages(prev => prev.filter(msg => msg.id !== messageId));
+      setUnreadCount(prev => Math.max(0, prev - 1));
+      toast.success('Message marked as read');
     } catch (error) {
       console.error('Error marking as read:', error);
+      toast.error('Failed to mark as read');
     }
   };
 
@@ -159,6 +168,11 @@ const NotificationBell = () => {
       );
       
       await Promise.all(updatePromises);
+      
+      // Clear all messages from dropdown immediately
+      setMessages([]);
+      setUnreadCount(0);
+      
       toast.success(`${unreadMessages.length} messages marked as read`);
     } catch (error) {
       console.error('Error marking all as read:', error);
@@ -208,15 +222,19 @@ const NotificationBell = () => {
               <div className="p-4 border-b bg-pink-50 flex justify-between items-center">
                 <div>
                   <h3 className="font-semibold text-gray-800">Notifications</h3>
-                  <p className="text-xs text-gray-500">{unreadCount} unread messages</p>
+                  <p className="text-xs text-gray-500">
+                    {unreadCount === 0 ? 'No unread messages' : `${unreadCount} unread message${unreadCount > 1 ? 's' : ''}`}
+                  </p>
                 </div>
                 {unreadCount > 0 && (
-                  <button
-                    onClick={markAllAsRead}
-                    className="text-xs text-primary hover:underline"
-                  >
-                    Mark all as read
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={markAllAsRead}
+                      className="text-xs text-primary hover:underline flex items-center gap-1"
+                    >
+                      <FaCheckDouble size={10} /> Mark all read
+                    </button>
+                  </div>
                 )}
               </div>
               
@@ -224,23 +242,24 @@ const NotificationBell = () => {
                 {messages.length === 0 ? (
                   <div className="p-8 text-center text-gray-500">
                     <FaBell className="text-4xl mx-auto mb-2 text-gray-300" />
-                    <p className="text-sm">No notifications yet</p>
+                    <p className="text-sm">No unread messages</p>
+                    <p className="text-xs text-gray-400 mt-1">All caught up! 🎉</p>
                   </div>
                 ) : (
                   messages.map((msg) => (
                     <div
                       key={msg.id}
                       onClick={() => handleOpenMessage(msg.id)}
-                      className={`block p-4 border-b hover:bg-gray-50 transition cursor-pointer ${!msg.read ? 'bg-pink-50/50' : ''}`}
+                      className="block p-4 border-b hover:bg-gray-50 transition cursor-pointer bg-pink-50/30"
                     >
                       <div className="flex gap-3">
-                        {!msg.read && <div className="w-2 h-2 mt-2 rounded-full bg-pink-500" />}
+                        <div className="w-2 h-2 mt-2 rounded-full bg-pink-500 animate-pulse" />
                         <div className="flex-1">
                           <p className="font-semibold text-sm text-gray-800">{msg.name}</p>
                           <p className="text-xs text-gray-500">{msg.phone}</p>
                           <p className="text-xs text-gray-600 mt-1 line-clamp-2">{msg.message}</p>
                           <p className="text-xs text-gray-400 mt-1">
-                            {msg.createdAt?.toLocaleDateString()}
+                            {msg.createdAt?.toLocaleDateString()} at {msg.createdAt?.toLocaleTimeString()}
                           </p>
                         </div>
                       </div>
