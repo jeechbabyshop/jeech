@@ -681,34 +681,34 @@ const ImageCapture = ({ onCapture, onClose }) => {
             )}
           </div>
           
-          {/* Action Buttons */}
-          <div className="bg-white border-t border-gray-200 px-4 pb-16 pt-3">
-            <div className="flex gap-3">
-              <button
-                onClick={retake}
-                disabled={isProcessing}
-                className="flex-1 py-2.5 border border-gray-300 text-gray-700 rounded-xl font-medium text-sm hover:bg-gray-50 transition"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleUsePhoto}
-                disabled={isProcessing}
-                className="flex-1 py-2.5 bg-blue-600 text-white rounded-xl font-medium text-sm shadow-md hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {isProcessing ? (
-                  <>
-                    <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  <>
-                    <FaCheckCircle className="text-sm" /> Apply
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
+          {/* Action Buttons - Increased bottom margin */}
+<div className="bg-white border-t border-gray-200 px-4 pb-32 pt-4">
+  <div className="flex gap-3">
+    <button
+      onClick={retake}
+      disabled={isProcessing}
+      className="flex-1 py-3 border border-gray-300 text-gray-700 rounded-xl font-medium text-base hover:bg-gray-50 transition"
+    >
+      Cancel
+    </button>
+    <button
+      onClick={handleUsePhoto}
+      disabled={isProcessing}
+      className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-medium text-base shadow-md hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center gap-2"
+    >
+      {isProcessing ? (
+        <>
+          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+          Processing...
+        </>
+      ) : (
+        <>
+          <FaCheckCircle className="text-sm" /> Apply
+        </>
+      )}
+    </button>
+  </div>
+</div>
         </div>
       )}
       

@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { FaTimes, FaUpload, FaCamera } from 'react-icons/fa';
 import ImageCapture from './ImageCapture';
+import ImageEditor from './ImageEditor';
 import toast from 'react-hot-toast';
 
 const ProductForm = ({ product, onSubmit, onClose }) => {
@@ -12,10 +13,8 @@ const ProductForm = ({ product, onSubmit, onClose }) => {
     featured: product?.featured || false,
   });
   
-  // Initialize images with existing product images if editing
   const [images, setImages] = useState(() => {
     if (product?.images && product.images.length > 0) {
-      // Convert existing image URLs to File-like objects for preview
       return product.images.map((url, index) => ({
         url: url,
         isExisting: true,
@@ -27,6 +26,7 @@ const ProductForm = ({ product, onSubmit, onClose }) => {
   
   const [loading, setLoading] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
+  const [showEditor, setShowEditor] = useState(null); // For gallery images
 
   const categories = [
     { value: 'clothes', label: 'Baby Clothes' },
@@ -44,19 +44,41 @@ const ProductForm = ({ product, onSubmit, onClose }) => {
     }));
   };
 
+  // Gallery upload - opens ImageEditor (NO camera)
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
     if (files.length + images.length > 5) {
       toast.error('Maximum 5 images allowed');
       return;
     }
-    const newImages = files.map(file => ({
-      file: file,
-      preview: URL.createObjectURL(file),
+    
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setShowEditor({
+          imageData: event.target.result,
+          file: file
+        });
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  // Camera - opens ImageCapture
+  const handleCameraOpen = () => {
+    setShowCamera(true);
+  };
+
+  const handleEditorSave = (editedFile) => {
+    const newImage = {
+      file: editedFile,
+      preview: URL.createObjectURL(editedFile),
       isExisting: false,
       id: Math.random().toString(36).substring(7)
-    }));
-    setImages(prev => [...prev, ...newImages]);
+    };
+    setImages(prev => [...prev, newImage]);
+    toast.success('Image added!');
+    setShowEditor(null);
   };
 
   const handleCameraCapture = (capturedImage) => {
@@ -68,6 +90,7 @@ const ProductForm = ({ product, onSubmit, onClose }) => {
     };
     setImages(prev => [...prev, newImage]);
     toast.success('Photo captured and added!');
+    setShowCamera(false);
   };
 
   const removeImage = (index) => {
@@ -89,7 +112,6 @@ const ProductForm = ({ product, onSubmit, onClose }) => {
 
     setLoading(true);
     try {
-      // Separate existing images (URLs) from new images (Files)
       const existingImageUrls = images
         .filter(img => img.isExisting)
         .map(img => img.url || img.preview);
@@ -98,10 +120,9 @@ const ProductForm = ({ product, onSubmit, onClose }) => {
         .filter(img => !img.isExisting && img.file)
         .map(img => img.file);
       
-      // Pass both existing URLs and new files to the onSubmit handler
       const productData = {
         ...formData,
-        images: existingImageUrls // Pass existing images to preserve them
+        images: existingImageUrls
       };
       
       await onSubmit(productData, newImageFiles);
@@ -128,7 +149,6 @@ const ProductForm = ({ product, onSubmit, onClose }) => {
           </div>
 
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
-            {/* Product Name */}
             <div>
               <label className="block text-sm font-semibold mb-2">Product Name *</label>
               <input
@@ -141,7 +161,6 @@ const ProductForm = ({ product, onSubmit, onClose }) => {
               />
             </div>
 
-            {/* Price */}
             <div>
               <label className="block text-sm font-semibold mb-2">Price (KES) *</label>
               <input
@@ -154,7 +173,6 @@ const ProductForm = ({ product, onSubmit, onClose }) => {
               />
             </div>
 
-            {/* Category */}
             <div>
               <label className="block text-sm font-semibold mb-2">Category *</label>
               <select
@@ -169,7 +187,6 @@ const ProductForm = ({ product, onSubmit, onClose }) => {
               </select>
             </div>
 
-            {/* Description */}
             <div>
               <label className="block text-sm font-semibold mb-2">Description *</label>
               <textarea
@@ -182,7 +199,6 @@ const ProductForm = ({ product, onSubmit, onClose }) => {
               />
             </div>
 
-            {/* Featured Toggle */}
             <div className="flex items-center">
               <input
                 type="checkbox"
@@ -194,11 +210,10 @@ const ProductForm = ({ product, onSubmit, onClose }) => {
               <label className="ml-2 text-sm font-semibold">Featured Product</label>
             </div>
 
-            {/* Images Upload with Camera Option */}
+            {/* Images Upload */}
             <div>
               <label className="block text-sm font-semibold mb-2">Product Images * (Max 5)</label>
               
-              {/* Upload Buttons */}
               <div className="flex gap-3 mb-4">
                 <label className="flex-1 cursor-pointer">
                   <div className="border-2 border-dashed rounded-lg p-3 text-center hover:border-primary transition">
@@ -216,7 +231,7 @@ const ProductForm = ({ product, onSubmit, onClose }) => {
                 
                 <button
                   type="button"
-                  onClick={() => setShowCamera(true)}
+                  onClick={handleCameraOpen}
                   className="flex-1 border-2 border-dashed rounded-lg p-3 text-center hover:border-primary transition"
                 >
                   <FaCamera className="mx-auto text-gray-400 mb-1" />
@@ -224,7 +239,6 @@ const ProductForm = ({ product, onSubmit, onClose }) => {
                 </button>
               </div>
               
-              {/* Image Preview Grid - Shows both existing and new images */}
               {images.length > 0 && (
                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 mt-4 max-h-64 overflow-y-auto p-2">
                   {images.map((img, idx) => (
@@ -256,7 +270,6 @@ const ProductForm = ({ product, onSubmit, onClose }) => {
               </p>
             </div>
 
-            {/* Submit Button */}
             <div className="flex gap-3">
               <button
                 type="submit"
@@ -282,6 +295,15 @@ const ProductForm = ({ product, onSubmit, onClose }) => {
         <ImageCapture
           onCapture={handleCameraCapture}
           onClose={() => setShowCamera(false)}
+        />
+      )}
+
+      {/* Image Editor for Gallery Images - NO CAMERA */}
+      {showEditor && (
+        <ImageEditor
+          initialImage={showEditor.imageData}
+          onSave={handleEditorSave}
+          onClose={() => setShowEditor(null)}
         />
       )}
     </>
