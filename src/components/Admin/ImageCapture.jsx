@@ -7,7 +7,15 @@ import {
   FaCheckCircle,
   FaArrowLeft,
   FaChevronUp,
-  FaCheck
+  FaCheck,
+  FaMagic,
+  FaSun,
+  FaAdjust,
+  FaUndo,
+  FaPalette,
+  FaTint,
+  FaEye,
+  FaChevronDown
 } from 'react-icons/fa';
 import ReactCrop from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
@@ -17,6 +25,8 @@ const ImageCapture = ({ onCapture, onClose }) => {
   const [capturedImage, setCapturedImage] = useState(null);
   const [selectedRatio, setSelectedRatio] = useState('1:1');
   const [showRatioMenu, setShowRatioMenu] = useState(false);
+  const [activeTab, setActiveTab] = useState('crop');
+  const [showEnhancePanel, setShowEnhancePanel] = useState(true);
   const [crop, setCrop] = useState({
     unit: '%',
     width: 80,
@@ -26,6 +36,14 @@ const ImageCapture = ({ onCapture, onClose }) => {
   });
   const [completedCrop, setCompletedCrop] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [enhancements, setEnhancements] = useState({
+    brightness: 100,
+    contrast: 100,
+    saturation: 100,
+    warmth: 0,
+    sharpness: 0
+  });
+  const [previewImage, setPreviewImage] = useState(null);
   const webcamRef = useRef(null);
   const imgRef = useRef(null);
   const containerRef = useRef(null);
@@ -74,11 +92,67 @@ const ImageCapture = ({ onCapture, onClose }) => {
     facingMode: "environment"
   };
 
-  // Reset crop when ratio changes
+  useEffect(() => {
+    if (capturedImage && activeTab === 'enhance') {
+      updatePreview();
+    }
+  }, [enhancements, capturedImage, activeTab]);
+
+  const updatePreview = async () => {
+    if (!capturedImage) return;
+    const enhancedImage = await applyEnhancementsToImage(capturedImage);
+    setPreviewImage(enhancedImage);
+  };
+
+  const applyEnhancementsToImage = (imageSrc) => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        
+        const brightnessFilter = `brightness(${enhancements.brightness}%)`;
+        const contrastFilter = `contrast(${enhancements.contrast}%)`;
+        const saturateFilter = `saturate(${enhancements.saturation}%)`;
+        
+        ctx.filter = `${brightnessFilter} ${contrastFilter} ${saturateFilter}`;
+        ctx.drawImage(img, 0, 0);
+        
+        if (enhancements.warmth !== 0) {
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const data = imageData.data;
+          const warmth = enhancements.warmth / 100;
+          
+          for (let i = 0; i < data.length; i += 4) {
+            data[i] += warmth * 30;
+            data[i+1] += warmth * 10;
+          }
+          ctx.putImageData(imageData, 0, 0);
+        }
+        
+        if (enhancements.sharpness > 0) {
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const data = imageData.data;
+          const sharpness = enhancements.sharpness / 100;
+          
+          for (let i = 0; i < data.length; i += 4) {
+            data[i] = Math.min(255, data[i] + (data[i] * sharpness));
+            data[i+1] = Math.min(255, data[i+1] + (data[i+1] * sharpness));
+            data[i+2] = Math.min(255, data[i+2] + (data[i+2] * sharpness));
+          }
+          ctx.putImageData(imageData, 0, 0);
+        }
+        
+        resolve(canvas.toDataURL('image/jpeg', 0.95));
+      };
+      img.src = imageSrc;
+    });
+  };
+
   useEffect(() => {
     if (capturedImage && imgRef.current) {
-      const img = imgRef.current;
-      // Use percentage-based crop that stays within image
       setCrop({
         unit: '%',
         width: 80,
@@ -92,8 +166,9 @@ const ImageCapture = ({ onCapture, onClose }) => {
   const capture = () => {
     const imageSrc = webcamRef.current.getScreenshot();
     setCapturedImage(imageSrc);
+    setPreviewImage(imageSrc);
     setShowCamera(false);
-    // Reset to percentage-based crop
+    setActiveTab('crop');
     setCrop({
       unit: '%',
       width: 80,
@@ -101,10 +176,18 @@ const ImageCapture = ({ onCapture, onClose }) => {
       x: 10,
       y: 10
     });
+    setEnhancements({
+      brightness: 100,
+      contrast: 100,
+      saturation: 100,
+      warmth: 0,
+      sharpness: 0
+    });
   };
 
   const retake = () => {
     setCapturedImage(null);
+    setPreviewImage(null);
     setShowCamera(true);
     setCompletedCrop(null);
     setCrop({
@@ -114,12 +197,76 @@ const ImageCapture = ({ onCapture, onClose }) => {
       x: 10,
       y: 10
     });
+    setEnhancements({
+      brightness: 100,
+      contrast: 100,
+      saturation: 100,
+      warmth: 0,
+      sharpness: 0
+    });
   };
 
-  const getCroppedImg = () => {
+  const applyEnhancements = (imageSrc) => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        
+        const brightnessFilter = `brightness(${enhancements.brightness}%)`;
+        const contrastFilter = `contrast(${enhancements.contrast}%)`;
+        const saturateFilter = `saturate(${enhancements.saturation}%)`;
+        
+        ctx.filter = `${brightnessFilter} ${contrastFilter} ${saturateFilter}`;
+        ctx.drawImage(img, 0, 0);
+        
+        if (enhancements.warmth !== 0) {
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const data = imageData.data;
+          const warmth = enhancements.warmth / 100;
+          
+          for (let i = 0; i < data.length; i += 4) {
+            data[i] += warmth * 30;
+            data[i+1] += warmth * 10;
+          }
+          ctx.putImageData(imageData, 0, 0);
+        }
+        
+        if (enhancements.sharpness > 0) {
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const data = imageData.data;
+          const sharpness = enhancements.sharpness / 100;
+          
+          for (let i = 0; i < data.length; i += 4) {
+            data[i] = Math.min(255, data[i] + (data[i] * sharpness));
+            data[i+1] = Math.min(255, data[i+1] + (data[i+1] * sharpness));
+            data[i+2] = Math.min(255, data[i+2] + (data[i+2] * sharpness));
+          }
+          ctx.putImageData(imageData, 0, 0);
+        }
+        
+        resolve(canvas.toDataURL('image/jpeg', 0.95));
+      };
+      img.src = imageSrc;
+    });
+  };
+
+  const getCroppedImg = async () => {
     if (!completedCrop || !imgRef.current) return null;
     
-    const image = imgRef.current;
+    let imageSrc = capturedImage;
+    
+    if (enhancements.brightness !== 100 || enhancements.contrast !== 100 || 
+        enhancements.saturation !== 100 || enhancements.warmth !== 0 || enhancements.sharpness !== 0) {
+      imageSrc = await applyEnhancements(imageSrc);
+    }
+    
+    const img = new Image();
+    img.src = imageSrc;
+    await new Promise((resolve) => { img.onload = resolve; });
+    
     const canvas = document.createElement('canvas');
     const targetRatio = getAspectRatioValue();
     
@@ -138,12 +285,11 @@ const ImageCapture = ({ onCapture, onClose }) => {
     canvas.height = finalHeight;
     const ctx = canvas.getContext('2d');
     
-    // Get the actual pixel dimensions
-    const scaleX = image.naturalWidth / image.width;
-    const scaleY = image.naturalHeight / image.height;
+    const scaleX = img.width / imgRef.current.width;
+    const scaleY = img.height / imgRef.current.height;
     
     ctx.drawImage(
-      image,
+      img,
       completedCrop.x * scaleX,
       completedCrop.y * scaleY,
       completedCrop.width * scaleX,
@@ -165,13 +311,20 @@ const ImageCapture = ({ onCapture, onClose }) => {
   const handleUsePhoto = async () => {
     setIsProcessing(true);
     try {
+      let finalImage = capturedImage;
+      
+      if (enhancements.brightness !== 100 || enhancements.contrast !== 100 || 
+          enhancements.saturation !== 100 || enhancements.warmth !== 0 || enhancements.sharpness !== 0) {
+        finalImage = await applyEnhancements(finalImage);
+      }
+      
       if (completedCrop) {
         const croppedImage = await getCroppedImg();
         if (croppedImage) {
           onCapture(croppedImage);
         }
       } else {
-        const response = await fetch(capturedImage);
+        const response = await fetch(finalImage);
         const blob = await response.blob();
         const file = new File([blob], `photo-${selectedRatio}-${Date.now()}.jpg`, { type: 'image/jpeg' });
         onCapture(file);
@@ -182,6 +335,16 @@ const ImageCapture = ({ onCapture, onClose }) => {
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  const resetEnhancements = () => {
+    setEnhancements({
+      brightness: 100,
+      contrast: 100,
+      saturation: 100,
+      warmth: 0,
+      sharpness: 0
+    });
   };
 
   const guideDimensions = getGuideDimensions();
@@ -200,7 +363,6 @@ const ImageCapture = ({ onCapture, onClose }) => {
             mirrored={false}
           />
           
-          {/* Guide Overlay */}
           <div className="absolute inset-0 pointer-events-none">
             {selectedRatio !== 'full' && (
               <>
@@ -235,8 +397,7 @@ const ImageCapture = ({ onCapture, onClose }) => {
             )}
           </div>
           
-          {/* Top Bar - Close Button */}
-          <div className="absolute top-0 left-0 right-0 px-4 py-3">
+          <div className="absolute top-4 left-4 right-4 px-2 py-2">
             <button 
               onClick={onClose} 
               className="bg-black/50 backdrop-blur-md text-white p-2 rounded-full hover:bg-black/70 transition-all"
@@ -245,10 +406,8 @@ const ImageCapture = ({ onCapture, onClose }) => {
             </button>
           </div>
           
-          {/* Bottom Controls */}
-          <div className="absolute bottom-8 left-0 right-0 px-6">
+          <div className="absolute bottom-8 left-0 right-0 px-6 pb-6">
             <div className="flex items-center justify-center gap-6">
-              {/* Ratio Selector */}
               <div className="relative">
                 <button
                   onClick={() => setShowRatioMenu(!showRatioMenu)}
@@ -289,7 +448,6 @@ const ImageCapture = ({ onCapture, onClose }) => {
                 )}
               </div>
               
-              {/* Capture Button */}
               <button
                 onClick={capture}
                 className="bg-white w-20 h-20 rounded-full flex items-center justify-center shadow-2xl active:scale-95 transition-transform"
@@ -306,94 +464,213 @@ const ImageCapture = ({ onCapture, onClose }) => {
           </div>
         </div>
       ) : (
-        // CROP VIEW - FIXED WITH PROPER CONTAINER
+        // EDIT VIEW - With proper 1cm top and bottom padding
         <div className="flex-1 flex flex-col bg-black">
-          {/* Crop Header */}
-          <div className="bg-white px-4 py-3 flex items-center justify-between border-b border-gray-200">
+          {/* Header - 1cm top padding (pt-16 = 4rem ≈ 1cm) */}
+          <div className="bg-white px-4 pt-16 pb-2 flex items-center justify-between border-b border-gray-200">
             <button
               onClick={retake}
-              className="flex items-center gap-2 px-4 py-2 text-gray-700 font-medium rounded-lg hover:bg-gray-100"
+              className="flex items-center gap-2 px-3 py-2 text-gray-700 font-medium rounded-lg hover:bg-gray-100"
             >
-              <FaArrowLeft className="text-lg" />
-              <span>Retake</span>
+              <FaArrowLeft className="text-base" />
+              <span className="text-sm">Retake</span>
             </button>
-            <div className="flex items-center gap-2 text-gray-600">
-              <FaCrop className="text-lg" />
-              <span className="text-sm font-medium">Drag corners to crop</span>
+            
+            <div className="flex gap-2 bg-gray-100 rounded-lg p-0.5">
+              <button
+                onClick={() => setActiveTab('crop')}
+                className={`px-4 py-1.5 rounded-md flex items-center gap-1.5 transition-all duration-200 text-sm ${
+                  activeTab === 'crop' 
+                    ? 'bg-blue-600 text-white shadow-md' 
+                    : 'text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                <FaCrop className="text-sm" />
+                <span>Crop</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('enhance')}
+                className={`px-4 py-1.5 rounded-md flex items-center gap-1.5 transition-all duration-200 text-sm ${
+                  activeTab === 'enhance' 
+                    ? 'bg-blue-600 text-white shadow-md' 
+                    : 'text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                <FaMagic className="text-sm" />
+                <span>Enhance</span>
+              </button>
             </div>
+            
             <div className="w-16" />
           </div>
           
-          {/* Crop Area - WITH PROPER SCROLL AND VISIBLE CONTROLS */}
-          <div 
-            ref={containerRef}
-            className="flex-1 overflow-auto bg-gray-900"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '20px',
-              minHeight: 0
-            }}
-          >
-            <div 
-              className="relative"
-              style={{
-                maxWidth: '100%',
-                maxHeight: '100%',
-                margin: 'auto'
-              }}
-            >
-              <ReactCrop
-                crop={crop}
-                onChange={(newCrop) => setCrop(newCrop)}
-                onComplete={(c) => setCompletedCrop(c)}
-                aspect={getAspectRatioValue()}
-                ruleOfThirds
-                className="react-crop-container"
-                style={{
-                  maxWidth: '100%',
-                  maxHeight: 'calc(100vh - 150px)',
-                }}
+          {/* Content Area */}
+          <div className="flex-1 overflow-auto bg-gray-900">
+            {activeTab === 'crop' ? (
+              // Crop Mode
+              <div 
+                ref={containerRef}
+                className="flex items-center justify-center min-h-full p-4"
               >
-                <img
-                  ref={imgRef}
-                  src={capturedImage}
-                  alt="Crop preview"
-                  style={{
-                    maxWidth: '100%',
-                    maxHeight: 'calc(100vh - 150px)',
-                    width: 'auto',
-                    height: 'auto',
-                    objectFit: 'contain'
-                  }}
-                />
-              </ReactCrop>
-            </div>
+                <div className="relative max-w-full max-h-full">
+                  <ReactCrop
+                    crop={crop}
+                    onChange={(newCrop) => setCrop(newCrop)}
+                    onComplete={(c) => setCompletedCrop(c)}
+                    aspect={getAspectRatioValue()}
+                    ruleOfThirds
+                    className="react-crop-container"
+                  >
+                    <img
+                      ref={imgRef}
+                      src={capturedImage}
+                      alt="Crop preview"
+                      className="max-w-full max-h-[calc(100vh-160px)] object-contain"
+                    />
+                  </ReactCrop>
+                </div>
+              </div>
+            ) : (
+              // Enhance Mode
+              <div className="flex flex-col h-full">
+                {/* Large Image Preview */}
+                <div className="flex-1 flex items-center justify-center p-3 bg-black/50 min-h-[45vh]">
+                  <div className="relative max-w-full">
+                    <img
+                      src={previewImage || capturedImage}
+                      alt="Enhanced preview"
+                      className="max-w-full max-h-[45vh] object-contain rounded-lg shadow-2xl"
+                    />
+                    <div className="absolute top-2 right-2 bg-blue-600/80 text-white text-[10px] px-2 py-0.5 rounded-full flex items-center gap-1">
+                      <FaEye className="text-[10px]" /> Live
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Collapsible Controls */}
+                <div className="bg-gray-900 border-t border-gray-800 pb-4">
+                  <button
+                    onClick={() => setShowEnhancePanel(!showEnhancePanel)}
+                    className="w-full py-2 flex items-center justify-center gap-2 text-gray-400 text-xs"
+                  >
+                    <FaChevronDown className={`text-xs transition-transform ${showEnhancePanel ? 'rotate-180' : ''}`} />
+                    <span>Adjustments</span>
+                  </button>
+                  
+                  {showEnhancePanel && (
+                    <div className="p-3 space-y-3 max-h-[35vh] overflow-y-auto">
+                      <div>
+                        <div className="flex items-center justify-between text-white text-xs mb-1">
+                          <span className="flex items-center gap-1"><FaSun className="text-yellow-400 text-xs" /> Brightness</span>
+                          <span className="text-blue-400 font-mono text-xs">{enhancements.brightness}%</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="50"
+                          max="150"
+                          value={enhancements.brightness}
+                          onChange={(e) => setEnhancements(prev => ({ ...prev, brightness: parseInt(e.target.value) }))}
+                          className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer"
+                        />
+                      </div>
+                      
+                      <div>
+                        <div className="flex items-center justify-between text-white text-xs mb-1">
+                          <span className="flex items-center gap-1"><FaAdjust className="text-blue-400 text-xs" /> Contrast</span>
+                          <span className="text-blue-400 font-mono text-xs">{enhancements.contrast}%</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="50"
+                          max="150"
+                          value={enhancements.contrast}
+                          onChange={(e) => setEnhancements(prev => ({ ...prev, contrast: parseInt(e.target.value) }))}
+                          className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer"
+                        />
+                      </div>
+                      
+                      <div>
+                        <div className="flex items-center justify-between text-white text-xs mb-1">
+                          <span className="flex items-center gap-1"><FaTint className="text-purple-400 text-xs" /> Saturation</span>
+                          <span className="text-blue-400 font-mono text-xs">{enhancements.saturation}%</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="50"
+                          max="150"
+                          value={enhancements.saturation}
+                          onChange={(e) => setEnhancements(prev => ({ ...prev, saturation: parseInt(e.target.value) }))}
+                          className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer"
+                        />
+                      </div>
+                      
+                      <div>
+                        <div className="flex items-center justify-between text-white text-xs mb-1">
+                          <span className="flex items-center gap-1"><FaPalette className="text-orange-400 text-xs" /> Warmth</span>
+                          <span className="text-blue-400 font-mono text-xs">{enhancements.warmth > 0 ? `+${enhancements.warmth}` : enhancements.warmth}</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="-50"
+                          max="50"
+                          value={enhancements.warmth}
+                          onChange={(e) => setEnhancements(prev => ({ ...prev, warmth: parseInt(e.target.value) }))}
+                          className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer"
+                        />
+                      </div>
+                      
+                      <div>
+                        <div className="flex items-center justify-between text-white text-xs mb-1">
+                          <span className="flex items-center gap-1">✨ Sharpness</span>
+                          <span className="text-blue-400 font-mono text-xs">{enhancements.sharpness}%</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0"
+                          max="100"
+                          value={enhancements.sharpness}
+                          onChange={(e) => setEnhancements(prev => ({ ...prev, sharpness: parseInt(e.target.value) }))}
+                          className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer"
+                        />
+                      </div>
+                      
+                      <button
+                        onClick={resetEnhancements}
+                        className="w-full py-1.5 bg-gray-700 text-white rounded-lg flex items-center justify-center gap-1 hover:bg-gray-600 transition-all duration-200 text-xs"
+                      >
+                        <FaUndo className="text-xs" /> Reset
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
           
-          {/* Action Buttons */}
-          <div className="bg-white border-t border-gray-200 px-4 py-4">
+          {/* Action Buttons - 1cm bottom padding (pb-16 = 4rem ≈ 1cm) */}
+          <div className="bg-white border-t border-gray-200 px-4 pb-16 pt-3">
             <div className="flex gap-3">
               <button
                 onClick={retake}
                 disabled={isProcessing}
-                className="flex-1 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium text-base"
+                className="flex-1 py-2.5 border border-gray-300 text-gray-700 rounded-xl font-medium text-sm hover:bg-gray-50 transition"
               >
-                Retake
+                Cancel
               </button>
               <button
                 onClick={handleUsePhoto}
                 disabled={isProcessing}
-                className="flex-1 py-3 bg-blue-600 text-white rounded-lg font-medium text-base shadow-md disabled:opacity-50"
+                className="flex-1 py-2.5 bg-blue-600 text-white rounded-xl font-medium text-sm shadow-md hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {isProcessing ? (
-                  <div className="flex items-center justify-center gap-2">
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <>
+                    <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     Processing...
-                  </div>
+                  </>
                 ) : (
-                  'Use Photo'
+                  <>
+                    <FaCheckCircle className="text-sm" /> Apply
+                  </>
                 )}
               </button>
             </div>
@@ -401,11 +678,10 @@ const ImageCapture = ({ onCapture, onClose }) => {
         </div>
       )}
       
-      {/* Add custom styles to ensure crop handles are visible */}
       <style jsx>{`
         .react-crop-container {
           max-width: 100%;
-          max-height: calc(100vh - 150px);
+          max-height: calc(100vh - 160px);
         }
         .react-crop-container .ReactCrop__crop-selection {
           border: 2px solid #3b82f6 !important;
@@ -415,6 +691,22 @@ const ImageCapture = ({ onCapture, onClose }) => {
           width: 12px !important;
           height: 12px !important;
           border: 2px solid white !important;
+        }
+        input[type="range"] {
+          -webkit-appearance: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          width: 14px;
+          height: 14px;
+          border-radius: 50%;
+          background: #3b82f6;
+          cursor: pointer;
+          border: 2px solid white;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+        input[type="range"]:focus {
+          outline: none;
         }
       `}</style>
     </div>
