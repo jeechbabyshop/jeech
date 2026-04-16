@@ -464,9 +464,9 @@ const ImageCapture = ({ onCapture, onClose }) => {
           </div>
         </div>
       ) : (
-        // EDIT VIEW - With proper 1cm top and bottom padding
+        // EDIT VIEW
         <div className="flex-1 flex flex-col bg-black">
-          {/* Header - 1cm top padding (pt-16 = 4rem ≈ 1cm) */}
+          {/* Header */}
           <div className="bg-white px-4 pt-16 pb-2 flex items-center justify-between border-b border-gray-200">
             <button
               onClick={retake}
@@ -507,33 +507,67 @@ const ImageCapture = ({ onCapture, onClose }) => {
           {/* Content Area */}
           <div className="flex-1 overflow-auto bg-gray-900">
             {activeTab === 'crop' ? (
-              // Crop Mode
-              <div 
-                ref={containerRef}
-                className="flex items-center justify-center min-h-full p-4"
-              >
-                <div className="relative max-w-full max-h-full">
-                  <ReactCrop
-                    crop={crop}
-                    onChange={(newCrop) => setCrop(newCrop)}
-                    onComplete={(c) => setCompletedCrop(c)}
-                    aspect={getAspectRatioValue()}
-                    ruleOfThirds
-                    className="react-crop-container"
-                  >
-                    <img
-                      ref={imgRef}
-                      src={capturedImage}
-                      alt="Crop preview"
-                      className="max-w-full max-h-[calc(100vh-160px)] object-contain"
-                    />
-                  </ReactCrop>
+              // CROP MODE - Fully visible with instructions
+              <div className="flex flex-col h-full">
+                {/* Instructions Banner */}
+                <div className="bg-blue-600/30 px-4 py-2.5 text-center border-b border-blue-500/30">
+                  <p className="text-blue-200 text-xs flex items-center justify-center gap-2">
+                    <FaCrop className="text-xs" />
+                    Tap and drag the corner handles to crop your image
+                    <FaCrop className="text-xs" />
+                  </p>
+                </div>
+                
+                {/* Crop Canvas */}
+                <div 
+                  ref={containerRef}
+                  className="flex-1 flex items-center justify-center p-4 bg-black"
+                >
+                  <div className="relative max-w-full max-h-full">
+                    <ReactCrop
+                      crop={crop}
+                      onChange={(newCrop) => setCrop(newCrop)}
+                      onComplete={(c) => setCompletedCrop(c)}
+                      aspect={getAspectRatioValue()}
+                      ruleOfThirds
+                      className="react-crop-container"
+                    >
+                      <img
+                        ref={imgRef}
+                        src={capturedImage}
+                        alt="Crop preview"
+                        className="max-w-full max-h-[calc(100vh-200px)] object-contain"
+                      />
+                    </ReactCrop>
+                  </div>
+                </div>
+                
+                {/* Ratio Selector */}
+                <div className="bg-gray-900 border-t border-gray-800 p-3">
+                  <div className="flex items-center justify-center gap-3">
+                    <span className="text-white text-xs">Aspect Ratio:</span>
+                    <div className="flex gap-2">
+                      {Object.entries(aspectRatios).map(([key, value]) => (
+                        <button
+                          key={key}
+                          onClick={() => setSelectedRatio(key)}
+                          className={`px-3 py-1 rounded-lg text-xs transition ${
+                            selectedRatio === key 
+                              ? 'bg-blue-600 text-white' 
+                              : 'bg-gray-700 text-gray-300'
+                          }`}
+                        >
+                          {value.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
             ) : (
-              // Enhance Mode
+              // ENHANCE MODE
               <div className="flex flex-col h-full">
-                {/* Large Image Preview */}
+                {/* Image Preview */}
                 <div className="flex-1 flex items-center justify-center p-3 bg-black/50 min-h-[45vh]">
                   <div className="relative max-w-full">
                     <img
@@ -647,7 +681,7 @@ const ImageCapture = ({ onCapture, onClose }) => {
             )}
           </div>
           
-          {/* Action Buttons - 1cm bottom padding (pb-16 = 4rem ≈ 1cm) */}
+          {/* Action Buttons */}
           <div className="bg-white border-t border-gray-200 px-4 pb-16 pt-3">
             <div className="flex gap-3">
               <button
@@ -681,15 +715,15 @@ const ImageCapture = ({ onCapture, onClose }) => {
       <style jsx>{`
         .react-crop-container {
           max-width: 100%;
-          max-height: calc(100vh - 160px);
+          max-height: calc(100vh - 200px);
         }
         .react-crop-container .ReactCrop__crop-selection {
           border: 2px solid #3b82f6 !important;
         }
         .react-crop-container .ReactCrop__drag-handle {
           background-color: #3b82f6 !important;
-          width: 12px !important;
-          height: 12px !important;
+          width: 14px !important;
+          height: 14px !important;
           border: 2px solid white !important;
         }
         input[type="range"] {
