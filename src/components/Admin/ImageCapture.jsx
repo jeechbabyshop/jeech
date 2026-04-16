@@ -6,9 +6,8 @@ import {
   FaCrop, 
   FaCheckCircle,
   FaArrowLeft,
-  FaSlidersH,
-  FaCheck,
-  FaChevronUp
+  FaChevronUp,
+  FaCheck
 } from 'react-icons/fa';
 import ReactCrop from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
@@ -19,16 +18,17 @@ const ImageCapture = ({ onCapture, onClose }) => {
   const [selectedRatio, setSelectedRatio] = useState('1:1');
   const [showRatioMenu, setShowRatioMenu] = useState(false);
   const [crop, setCrop] = useState({
-    unit: 'px',
-    width: 800,
-    height: 800,
-    x: 100,
-    y: 100
+    unit: '%',
+    width: 80,
+    height: 80,
+    x: 10,
+    y: 10
   });
   const [completedCrop, setCompletedCrop] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const webcamRef = useRef(null);
   const imgRef = useRef(null);
+  const containerRef = useRef(null);
 
   const aspectRatios = {
     '1:1': { ratio: 1, label: '1:1', icon: '□' },
@@ -74,60 +74,46 @@ const ImageCapture = ({ onCapture, onClose }) => {
     facingMode: "environment"
   };
 
+  // Reset crop when ratio changes
   useEffect(() => {
     if (capturedImage && imgRef.current) {
       const img = imgRef.current;
-      const updateDimensions = () => {
-        const targetRatio = getAspectRatioValue();
-        if (targetRatio) {
-          let cropWidth, cropHeight;
-          if (targetRatio > 1) {
-            cropHeight = img.naturalHeight;
-            cropWidth = cropHeight * targetRatio;
-          } else {
-            cropWidth = img.naturalWidth;
-            cropHeight = cropWidth / targetRatio;
-          }
-          
-          if (cropWidth > img.naturalWidth) {
-            cropWidth = img.naturalWidth;
-            cropHeight = cropWidth / targetRatio;
-          }
-          if (cropHeight > img.naturalHeight) {
-            cropHeight = img.naturalHeight;
-            cropWidth = cropHeight * targetRatio;
-          }
-          
-          const cropX = (img.naturalWidth - cropWidth) / 2;
-          const cropY = (img.naturalHeight - cropHeight) / 2;
-          
-          setCrop({
-            unit: 'px',
-            width: cropWidth,
-            height: cropHeight,
-            x: cropX,
-            y: cropY
-          });
-        }
-      };
-      if (img.complete) {
-        updateDimensions();
-      } else {
-        img.onload = updateDimensions;
-      }
+      // Use percentage-based crop that stays within image
+      setCrop({
+        unit: '%',
+        width: 80,
+        height: 80,
+        x: 10,
+        y: 10
+      });
     }
-  }, [capturedImage, selectedRatio]);
+  }, [selectedRatio, capturedImage]);
 
   const capture = () => {
     const imageSrc = webcamRef.current.getScreenshot();
     setCapturedImage(imageSrc);
     setShowCamera(false);
+    // Reset to percentage-based crop
+    setCrop({
+      unit: '%',
+      width: 80,
+      height: 80,
+      x: 10,
+      y: 10
+    });
   };
 
   const retake = () => {
     setCapturedImage(null);
     setShowCamera(true);
     setCompletedCrop(null);
+    setCrop({
+      unit: '%',
+      width: 80,
+      height: 80,
+      x: 10,
+      y: 10
+    });
   };
 
   const getCroppedImg = () => {
@@ -152,12 +138,16 @@ const ImageCapture = ({ onCapture, onClose }) => {
     canvas.height = finalHeight;
     const ctx = canvas.getContext('2d');
     
+    // Get the actual pixel dimensions
+    const scaleX = image.naturalWidth / image.width;
+    const scaleY = image.naturalHeight / image.height;
+    
     ctx.drawImage(
       image,
-      completedCrop.x,
-      completedCrop.y,
-      completedCrop.width,
-      completedCrop.height,
+      completedCrop.x * scaleX,
+      completedCrop.y * scaleY,
+      completedCrop.width * scaleX,
+      completedCrop.height * scaleY,
       0,
       0,
       finalWidth,
@@ -201,7 +191,6 @@ const ImageCapture = ({ onCapture, onClose }) => {
       {showCamera ? (
         // CAMERA VIEW
         <div className="relative flex-1 w-full h-full bg-black">
-          {/* Camera Preview */}
           <Webcam
             ref={webcamRef}
             audio={false}
@@ -215,10 +204,6 @@ const ImageCapture = ({ onCapture, onClose }) => {
           <div className="absolute inset-0 pointer-events-none">
             {selectedRatio !== 'full' && (
               <>
-                {/* Dark overlay outside guide */}
-                <div className="absolute inset-0 bg-black bg-opacity-50" />
-                
-                {/* Clear area (using mask) */}
                 <div 
                   className="absolute bg-transparent"
                   style={{
@@ -227,12 +212,10 @@ const ImageCapture = ({ onCapture, onClose }) => {
                     transform: 'translate(-50%, -50%)',
                     width: guideDimensions.width,
                     height: guideDimensions.height,
-                    backgroundColor: 'transparent',
                     boxShadow: '0 0 0 9999px rgba(0,0,0,0.5)'
                   }}
                 />
                 
-                {/* Guide Border */}
                 <div 
                   className="absolute border-2 border-white"
                   style={{
@@ -243,7 +226,6 @@ const ImageCapture = ({ onCapture, onClose }) => {
                     height: guideDimensions.height,
                   }}
                 >
-                  {/* Corner markers */}
                   <div className="absolute -top-1 -left-1 w-6 h-6 border-t-2 border-l-2 border-white" />
                   <div className="absolute -top-1 -right-1 w-6 h-6 border-t-2 border-r-2 border-white" />
                   <div className="absolute -bottom-1 -left-1 w-6 h-6 border-b-2 border-l-2 border-white" />
@@ -253,7 +235,7 @@ const ImageCapture = ({ onCapture, onClose }) => {
             )}
           </div>
           
-          {/* Top Bar - Only Close Button */}
+          {/* Top Bar - Close Button */}
           <div className="absolute top-0 left-0 right-0 px-4 py-3">
             <button 
               onClick={onClose} 
@@ -263,10 +245,10 @@ const ImageCapture = ({ onCapture, onClose }) => {
             </button>
           </div>
           
-          {/* Bottom Controls - Ratio Selector + Capture Button Side by Side */}
+          {/* Bottom Controls */}
           <div className="absolute bottom-8 left-0 right-0 px-6">
             <div className="flex items-center justify-center gap-6">
-              {/* Ratio Selector Button */}
+              {/* Ratio Selector */}
               <div className="relative">
                 <button
                   onClick={() => setShowRatioMenu(!showRatioMenu)}
@@ -277,7 +259,6 @@ const ImageCapture = ({ onCapture, onClose }) => {
                   <FaChevronUp className={`text-sm transition-transform ${showRatioMenu ? 'rotate-180' : ''}`} />
                 </button>
                 
-                {/* Dropdown Menu - Opens UPWARD */}
                 {showRatioMenu && (
                   <>
                     <div 
@@ -316,18 +297,16 @@ const ImageCapture = ({ onCapture, onClose }) => {
                 <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-blue-600" />
               </button>
               
-              {/* Spacer for balance */}
               <div className="w-[88px]" />
             </div>
             
-            {/* Instruction Text */}
             <p className="text-center text-white text-xs mt-4 bg-black/40 backdrop-blur-sm inline-block mx-auto px-3 py-1 rounded-full w-auto block">
               {selectedRatio === 'full' ? 'Full screen capture' : `${aspectRatios[selectedRatio].label} format`}
             </p>
           </div>
         </div>
       ) : (
-        // CROP VIEW
+        // CROP VIEW - FIXED WITH PROPER CONTAINER
         <div className="flex-1 flex flex-col bg-black">
           {/* Crop Header */}
           <div className="bg-white px-4 py-3 flex items-center justify-between border-b border-gray-200">
@@ -340,27 +319,57 @@ const ImageCapture = ({ onCapture, onClose }) => {
             </button>
             <div className="flex items-center gap-2 text-gray-600">
               <FaCrop className="text-lg" />
-              <span className="text-sm font-medium">Crop to {aspectRatios[selectedRatio].label}</span>
+              <span className="text-sm font-medium">Drag corners to crop</span>
             </div>
             <div className="w-16" />
           </div>
           
-          {/* Crop Area */}
-          <div className="flex-1 flex items-center justify-center p-4 overflow-auto">
-            <ReactCrop
-              crop={crop}
-              onChange={setCrop}
-              onComplete={setCompletedCrop}
-              aspect={getAspectRatioValue()}
-              className="max-h-full"
+          {/* Crop Area - WITH PROPER SCROLL AND VISIBLE CONTROLS */}
+          <div 
+            ref={containerRef}
+            className="flex-1 overflow-auto bg-gray-900"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '20px',
+              minHeight: 0
+            }}
+          >
+            <div 
+              className="relative"
+              style={{
+                maxWidth: '100%',
+                maxHeight: '100%',
+                margin: 'auto'
+              }}
             >
-              <img
-                ref={imgRef}
-                src={capturedImage}
-                alt="Crop preview"
-                className="max-w-full max-h-[70vh] object-contain"
-              />
-            </ReactCrop>
+              <ReactCrop
+                crop={crop}
+                onChange={(newCrop) => setCrop(newCrop)}
+                onComplete={(c) => setCompletedCrop(c)}
+                aspect={getAspectRatioValue()}
+                ruleOfThirds
+                className="react-crop-container"
+                style={{
+                  maxWidth: '100%',
+                  maxHeight: 'calc(100vh - 150px)',
+                }}
+              >
+                <img
+                  ref={imgRef}
+                  src={capturedImage}
+                  alt="Crop preview"
+                  style={{
+                    maxWidth: '100%',
+                    maxHeight: 'calc(100vh - 150px)',
+                    width: 'auto',
+                    height: 'auto',
+                    objectFit: 'contain'
+                  }}
+                />
+              </ReactCrop>
+            </div>
           </div>
           
           {/* Action Buttons */}
@@ -391,6 +400,23 @@ const ImageCapture = ({ onCapture, onClose }) => {
           </div>
         </div>
       )}
+      
+      {/* Add custom styles to ensure crop handles are visible */}
+      <style jsx>{`
+        .react-crop-container {
+          max-width: 100%;
+          max-height: calc(100vh - 150px);
+        }
+        .react-crop-container .ReactCrop__crop-selection {
+          border: 2px solid #3b82f6 !important;
+        }
+        .react-crop-container .ReactCrop__drag-handle {
+          background-color: #3b82f6 !important;
+          width: 12px !important;
+          height: 12px !important;
+          border: 2px solid white !important;
+        }
+      `}</style>
     </div>
   );
 };
