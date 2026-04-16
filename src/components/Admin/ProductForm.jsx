@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FaTimes, FaUpload, FaCamera } from 'react-icons/fa';
 import ImageCapture from './ImageCapture';
 import toast from 'react-hot-toast';
@@ -11,7 +11,20 @@ const ProductForm = ({ product, onSubmit, onClose }) => {
     description: product?.description || '',
     featured: product?.featured || false,
   });
-  const [images, setImages] = useState([]);
+  
+  // Initialize images with existing product images if editing
+  const [images, setImages] = useState(() => {
+    if (product?.images && product.images.length > 0) {
+      // Convert existing image URLs to File-like objects for preview
+      return product.images.map((url, index) => ({
+        url: url,
+        isExisting: true,
+        id: `existing-${index}`
+      }));
+    }
+    return [];
+  });
+  
   const [loading, setLoading] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
 
@@ -37,11 +50,23 @@ const ProductForm = ({ product, onSubmit, onClose }) => {
       toast.error('Maximum 5 images allowed');
       return;
     }
-    setImages(prev => [...prev, ...files]);
+    const newImages = files.map(file => ({
+      file: file,
+      preview: URL.createObjectURL(file),
+      isExisting: false,
+      id: Math.random().toString(36).substring(7)
+    }));
+    setImages(prev => [...prev, ...newImages]);
   };
 
   const handleCameraCapture = (capturedImage) => {
-    setImages(prev => [...prev, capturedImage]);
+    const newImage = {
+      file: capturedImage,
+      preview: URL.createObjectURL(capturedImage),
+      isExisting: false,
+      id: Math.random().toString(36).substring(7)
+    };
+    setImages(prev => [...prev, newImage]);
     toast.success('Photo captured and added!');
   };
 
@@ -64,7 +89,22 @@ const ProductForm = ({ product, onSubmit, onClose }) => {
 
     setLoading(true);
     try {
-      await onSubmit(formData, images);
+      // Separate existing images (URLs) from new images (Files)
+      const existingImageUrls = images
+        .filter(img => img.isExisting)
+        .map(img => img.url || img.preview);
+      
+      const newImageFiles = images
+        .filter(img => !img.isExisting && img.file)
+        .map(img => img.file);
+      
+      // Pass both existing URLs and new files to the onSubmit handler
+      const productData = {
+        ...formData,
+        images: existingImageUrls // Pass existing images to preserve them
+      };
+      
+      await onSubmit(productData, newImageFiles);
       toast.success(product ? 'Product updated!' : 'Product created!');
       onClose();
     } catch (error) {
@@ -184,13 +224,13 @@ const ProductForm = ({ product, onSubmit, onClose }) => {
                 </button>
               </div>
               
-              {/* Image Preview Grid */}
+              {/* Image Preview Grid - Shows both existing and new images */}
               {images.length > 0 && (
                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 mt-4 max-h-64 overflow-y-auto p-2">
                   {images.map((img, idx) => (
-                    <div key={idx} className="relative group">
+                    <div key={img.id || idx} className="relative group">
                       <img
-                        src={img instanceof File ? URL.createObjectURL(img) : img}
+                        src={img.preview || img.url}
                         alt={`Preview ${idx}`}
                         className="w-full h-24 object-cover rounded-lg shadow-md"
                       />
@@ -201,6 +241,11 @@ const ProductForm = ({ product, onSubmit, onClose }) => {
                       >
                         <FaTimes size={12} />
                       </button>
+                      {img.isExisting && (
+                        <span className="absolute bottom-1 left-1 bg-primary/80 text-white text-[10px] px-1 rounded">
+                          Existing
+                        </span>
+                      )}
                     </div>
                   ))}
                 </div>
